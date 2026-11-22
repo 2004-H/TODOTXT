@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>TODOTXT — Compact Offline Task Manager</title>
+  <style>
+    :root {
+      --bg-canvas: #0b0d10;
+      --bg-surface: #12151b;
+      --bg-elevated: #181c24;
+      --bg-hover: #1d222c;
+      --border-subtle: #232834;
+      --border-strong: #323949;
+      --text-primary: #e6e9ef;
+      --text-secondary: #8c95a6;
+      --text-muted: #5a6272;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-soft: rgba(59, 130, 246, 0.14);
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.14);
+      --success: #22c55e;
+      --amber: #f59e0b;
+      --violet: #a855f7;
+      --rose: #f43f5e;
+      --sky: #0ea5e9;
+      --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.4;
+    }
+
+    button, input, textarea, select {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .app-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 10px 12px 24px;
+      gap: 8px;
+    }
+
+    /* Top Header */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .task-summary {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 28px;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 5px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      white-space: nowrap;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn:hover {
+      background-color: var(--bg-hover);
+      border-color: var(--border-strong);
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-danger {
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.35);
+      background-color: rgba(239, 68, 68, 0.08);
+    }
+
+    .btn-danger:hover {
+      background-color: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.55);
+    }
+
+    .btn-sm {
+      height: 24px;
+      padding: 0 8px;
+      font-size: 11px;
+    }
+
+    .btn-icon {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+    }
+
+    /* Controls Bar: Add + Search */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 6px;
+    }
+
+    @media (max-width: 680px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      transition: border-color 0.15s ease;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--accent);
+    }
+
+    .text-input {
+      width: 100%;
+      height: 30px;
+      padding: 0 10px;
+      background: transparent;
+      border: none;
+      font-size: 11px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-action-btn {
+      height: 22px;
+      padding: 0 8px;
+      margin-right: 4px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background-color: var(--accent);
+      color: #fff;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .input-action-btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .clear-search-btn {
+      height: 20px;
+      width: 20px;
+      margin-right: 4px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .clear-search-btn.visible {
+      display: inline-flex;
+    }
+
+    .clear-search-btn:hover {
+      background-color: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    /* Filter Bar */
+    .filter-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-buttons-scroll {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 24px;
+      padding: 0 8px;
+      font-size: 10px;
+      font-weight: 500;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface);
+      color: var(--text-secondary);
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      background-color: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .filter-btn.active {
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .filter-btn[data-color="amber"].active {
+      background-color: rgba(245, 158, 11, 0.16);
+      border-color: var(--amber);
+    }
+
+    .filter-btn[data-color="emerald"].active {
+      background-color: rgba(34, 197, 94, 0.16);
+      border-color: var(--success);
+    }
+
+    .filter-btn[data-color="rose"].active {
+      background-color: rgba(244, 63, 94, 0.16);
+      border-color: var(--rose);
+    }
+
+    .filter-btn[data-color="violet"].active {
+      background-color: rgba(168, 85, 247, 0.16);
+      border-color: var(--violet);
+    }
+
+    .filter-btn[data-color="sky"].active {
+      background-color: rgba(14, 165, 233, 0.16);
+      border-color: var(--sky);
+    }
+
+    .filter-count {
+      font-variant-numeric: tabular-nums;
+      opacity: 0.7;
+      font-size: 9px;
+    }
+
+    .filter-tools {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .select-compact {
+      height: 24px;
+      padding: 0 6px;
+      font-size: 10px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    /* Ultra-Compact Task List (10px font-size) */
+    .task-list-container {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .task-list {
+      list-style: none;
+    }
+
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 6px;
+      min-height: 22px;
+      border-bottom: 1px solid rgba(35, 40, 52, 0.65);
+      transition: background-color 0.1s ease;
+    }
+
+    .task-row:last-child {
+      border-bottom: none;
+    }
+
+    .task-row:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .task-check-btn {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid var(--border-strong);
+      background-color: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: transparent;
+      font-size: 9px;
+      line-height: 1;
+      transition: all 0.12s ease;
+    }
+
+    .task-check-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .task-row.completed .task-check-btn {
+      background-color: var(--success);
+      border-color: var(--success);
+      color: #0b0d10;
+      font-weight: 700;
+    }
+
+    .task-content {
+      flex: 1;
+      min-width: 0;
+      font-size: 10px;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      color: var(--text-primary);
+      cursor: text;
+      word-break: break-word;
+      padding: 2px 0;
+      text-align: left;
+    }
+
+    .task-row.completed .task-content {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .task-edit-input {
+      flex: 1;
+      min-width: 0;
+      height: 20px;
+      padding: 0 5px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .task-remove-btn {
+      width: 20px;
+      height: 18px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .task-remove-btn:hover {
+      background-color: var(--danger-soft);
+      color: #fca5a5;
+    }
+
+    /* Touch friendliness on coarse pointers while maintaining compact 10px text */
+    @media (pointer: coarse) {
+      .task-row {
+        min-height: 28px;
+        padding: 3px 6px;
+      }
+      .task-check-btn {
+        width: 18px;
+        height: 18px;
+      }
+      .task-remove-btn {
+        width: 26px;
+        height: 24px;
+        font-size: 15px;
+      }
+    }
+
+    .empty-state {
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    .empty-state p {
+      margin-bottom: 10px;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(5, 7, 10, 0.76);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .modal-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .modal-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .modal-help {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 500px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field-input, .field-select, .field-textarea {
+      width: 100%;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      padding: 6px 8px;
+      font-size: 11px;
+      color: var(--text-primary);
+    }
+
+    .field-textarea {
+      min-height: 96px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      resize: vertical;
+    }
+
+    .custom-filter-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .custom-filter-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+    }
+
+    .custom-filter-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .custom-filter-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .custom-filter-query {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .custom-filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .backup-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .backup-actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .divider {
+      height: 1px;
+      background-color: var(--border-subtle);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: var(--text-primary);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .toast.visible {
+      display: flex;
+    }
+
+    .toast-undo {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .toast-undo:hover {
+      text-decoration: underline;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="brand-group">
+        <h1 class="brand-title">TODOTXT</h1>
+        <span class="task-summary" id="taskSummary">0 tasks</span>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" class="btn btn-sm" id="openFiltersBtn" title="Customize filter buttons">Customize Filters</button>
+        <button type="button" class="btn btn-sm" id="openBackupBtn" title="Export or restore local backup">Backup &amp; Restore</button>
+      </div>
+    </header>
+
+    <!-- Add & Search Inputs -->
+    <div class="controls-grid">
+      <form class="input-wrap" id="addForm">
+        <input
+          type="text"
+          id="addInput"
+          class="text-input"
+          placeholder="Add task in todo.txt format (e.g. (A) Buy milk +Home @errands due:2026-11-25)"
+          autocomplete="off"
+          aria-label="New task in todo.txt format"
+        />
+        <button type="submit" class="input-action-btn">Add</button>
+      </form>
+
+      <div class="input-wrap">
+        <input
+          type="text"
+          id="searchInput"
+          class="text-input"
+          placeholder="Search tasks, +project, @context... (/)"
+          autocomplete="off"
+          aria-label="Search tasks"
+        />
+        <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search">&times;</button>
+      </div>
+    </div>
+
+    <!-- Filter Buttons & Sort -->
+    <div class="filter-toolbar">
+      <div class="filter-buttons-scroll" id="filterButtonsContainer" role="tablist" aria-label="Task filters"></div>
+      <div class="filter-tools">
+        <select id="sortSelect" class="select-compact" aria-label="Sort tasks">
+          <option value="priority">Sort: Priority</option>
+          <option value="added">Sort: Order</option>
+          <option value="alpha">Sort: A-Z</option>
+          <option value="due">Sort: Due Date</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Compact Task List (10px font-size, content-only) -->
+    <main class="task-list-container">
+      <ul class="task-list" id="taskList" aria-label="Tasks"></ul>
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <p id="emptyMessage">No tasks match the current view.</p>
+        <button type="button" class="btn btn-sm" id="resetFilterBtn">Show All Tasks</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Customize Filters Modal -->
+  <div class="modal-backdrop" id="filtersModal" role="dialog" aria-modal="true" aria-labelledby="filtersModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="filtersModalTitle">Customize Filter Buttons</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeFiltersBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <form class="modal-section" id="newFilterForm">
+        <div class="modal-label" id="filterFormHeading">Add Custom Filter Button</div>
+        <div class="form-row">
+          <input type="text" id="filterLabelInput" class="field-input" placeholder="Button label (e.g. Work)" maxlength="24" required />
+          <input type="text" id="filterQueryInput" class="field-input" placeholder="Rule (e.g. +Work is:open)" required />
+        </div>
+        <div class="form-row">
+          <select id="filterColorSelect" class="field-select" aria-label="Button accent color">
+            <option value="blue">Accent: Blue</option>
+            <option value="amber">Accent: Amber</option>
+            <option value="emerald">Accent: Green</option>
+            <option value="rose">Accent: Rose</option>
+            <option value="violet">Accent: Violet</option>
+            <option value="sky">Accent: Sky</option>
+          </select>
+          <div style="display:flex; gap:6px; justify-content:flex-end;">
+            <button type="button" class="btn btn-sm" id="cancelFilterEditBtn" style="display:none;">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-primary" id="saveFilterBtn">Add Button</button>
+          </div>
+        </div>
+        <p class="modal-help">
+          Query syntax: combine tokens with spaces (AND) or <code>OR</code>. Supports <code>+project</code>, <code>@context</code>, <code>(A)</code> or <code>(A-B)</code>, <code>is:open</code>, <code>is:done</code>, <code>due:today</code>, <code>due:overdue</code>, negation with <code>-</code> (e.g. <code>-@waiting</code>), or plain text.
+        </p>
+      </form>
+
+      <div class="divider"></div>
+
+      <div class="modal-section">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="modal-label">Active Filter Buttons</span>
+          <button type="button" class="btn btn-sm" id="resetDefaultFiltersBtn">Reset Defaults</button>
+        </div>
+        <div class="custom-filter-list" id="customFilterList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backup & Restore Modal -->
+  <div class="modal-backdrop" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="backupModalTitle">Local Backup &amp; Restore</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeBackupBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-label">Export Data</div>
+        <div class="backup-actions-grid">
+          <button type="button" class="btn btn-sm" id="exportTxtBtn">Export todo.txt</button>
+          <button type="button" class="btn btn-sm" id="exportJsonBtn">Export Full JSON</button>
+          <button type="button" class="btn btn-sm" id="copyRawBtn">Copy todo.txt</button>
+        </div>
+        <p class="modal-help">
+          <code>todo.txt</code> exports standard plain-text lines compatible with any todo.txt app. Full JSON includes tasks and custom filter buttons.
+        </p>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="modal-section">
+        <div class="modal-label">Restore / Import</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-sm" id="pickFileBtn">Import .txt or .json File</button>
+          <input type="file" id="importFileInput" class="hidden-file-input" accept=".txt,.json,text/plain,application/json" />
+          <select id="importModeSelect" class="select-compact" aria-label="Import mode">
+            <option value="merge">Mode: Merge unique</option>
+            <option value="replace">Mode: Replace all</option>
+          </select>
+        </div>
+        <textarea id="pasteImportTextarea" class="field-textarea" placeholder="Or paste raw todo.txt lines here (one task per line)..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-sm btn-danger" id="clearCompletedBtn">Purge Completed</button>
+          <button type="button" class="btn btn-sm btn-primary" id="applyPasteImportBtn">Import Pasted Lines</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Undo Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span id="toastMessage"></span>
+    <button type="button" class="toast-undo" id="toastUndoBtn" style="display:none;">Undo</button>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var STORAGE_KEYS = {
+        TASKS: 'todotxt_offline_tasks_v1',
+        FILTERS: 'todotxt_offline_filters_v1',
+        SETTINGS: 'todotxt_offline_settings_v1',
+        INIT: 'todotxt_offline_init_v1'
+      };
+
+      var DEFAULT_FILTERS = [
+        { id: 'f_all', label: 'All', query: '', color: 'blue', visible: true },
+        { id: 'f_open', label: 'Open', query: 'is:open', color: 'sky', visible: true },
+        { id: 'f_high', label: 'Priority A-B', query: '(A-B) is:open', color: 'amber', visible: true },
+        { id: 'f_done', label: 'Done', query: 'is:done', color: 'emerald', visible: true }
+      ];
+
+      var SAMPLE_TASKS = [
+        '(A) 2026-11-22 Finalize quarterly budget review +Finance @office due:2026-11-24',
+        '(A) 2026-11-22 Call clinic to confirm Friday appointment +Health @phone',
+        '(B) 2026-11-21 Draft release notes for offline client +Work @laptop',
+        '(B) 2026-11-20 Buy coffee beans and oat milk +Home @errands',
+        '(C) 2026-11-19 Archive old project folders +Maintenance @computer',
+        '2026-11-18 Read backup verification checklist +Ops @reading',
+        'x 2026-11-22 2026-11-17 Sync local storage export test +Work @laptop'
+      ];
+
+      var state = {
+        tasks: [],
+        filters: [],
+        activeFilterId: 'f_all',
+        searchQuery: '',
+        sortBy: 'priority',
+        editingTaskId: null,
+        editingFilterId: null,
+        undoSnapshot: null
+      };
+
+      var toastTimer = null;
+
+      function todayISO() {
+        var d = new Date();
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+
+      function uid() {
+        return 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+      }
+
+      function parseTodoLine(raw) {
+        var text = String(raw || '').trim();
+        var remaining = text;
+        var completed = false;
+        var completionDate = null;
+        var priority = null;
+        var creationDate = null;
+
+        if (/^x(\s|$)/.test(remaining)) {
+          completed = true;
+          remaining = remaining.slice(1).trim();
+          var compDateMatch = remaining.match(/^(\d{4}-\d{2}-\d{2})(?:\s+|$)/);
+          if (compDateMatch) {
+            completionDate = compDateMatch[1];
+            remaining = remaining.slice(compDateMatch[0].length).trim();
+          }
+        }
+
+        var priMatch = remaining.match(/^\(([A-Z])\)\s+/);
+        if (priMatch) {
+          priority = priMatch[1];
+          remaining = remaining.slice(priMatch[0].length).trim();
+        }
+
+        var createMatch = remaining.match(/^(\d{4}-\d{2}-\d{2})(?:\s+|$)/);
+        if (createMatch) {
+          creationDate = createMatch[1];
+          remaining = remaining.slice(createMatch[0].length).trim();
+        }
+
+        // Extract projects (+tag), contexts (@tag), and key:value metadata
+        var projects = [];
+        var contexts = [];
+        var meta = {};
+        var contentParts = [];
+        var tokens = remaining ? remaining.split(/\s+/) : [];
+
+        for (var i = 0; i < tokens.length; i++) {
+          var tok = tokens[i];
+          if (/^\+\S+/.test(tok)) {
+            projects.push(tok.slice(1));
+          } else if (/^@\S+/.test(tok)) {
+            contexts.push(tok.slice(1));
+          } else if (/^[a-zA-Z][a-zA-Z0-9_-]*:[^\s]+$/.test(tok) && !/^https?:\/\//i.test(tok)) {
+            var colonIdx = tok.indexOf(':');
+            var k = tok.slice(0, colonIdx).toLowerCase();
+            var v = tok.slice(colonIdx + 1);
+            meta[k] = v;
+          } else {
+            contentParts.push(tok);
+          }
+        }
+
+        var content = contentParts.join(' ').trim();
+        if (!content) {
+          content = remaining || text;
+        }
+
+        return {
+          raw: text,
+          completed: completed,
+          completionDate: completionDate,
+          priority: priority,
+          creationDate: creationDate,
+          projects: projects,
+          contexts: contexts,
+          meta: meta,
+          due: meta.due || null,
+          content: content
+        };
+      }
+
+      function toggleRawCompletion(raw) {
+        var trimmed = String(raw || '').trim();
+        var today = todayISO();
+        if (/^x(\s|$)/.test(trimmed)) {
+          var rest = trimmed.slice(1).trim();
+          rest = rest.replace(/^\d{4}-\d{2}-\d{2}\s*/, '').trim();
+          return rest;
+        } else {
+          return 'x ' + today + ' ' + trimmed;
+        }
+      }
+
+      function matchesSingleTerm(parsed, term) {
+        if (!term) return true;
+        var negate = false;
+        if (term.charAt(0) === '-' && term.length > 1) {
+          negate = true;
+          term = term.slice(1);
+        }
+
+        var lower = term.toLowerCase();
+        var result = false;
+
+        if (lower === 'is:open' || lower === 'is:active') {
+          result = !parsed.completed;
+        } else if (lower === 'is:done' || lower === 'is:completed') {
+          result = parsed.completed;
+        } else if (/^\(([A-Z])\)$/i.test(term)) {
+          var targetP = term.slice(1, 2).toUpperCase();
+          result = parsed.priority === targetP;
+        } else if (/^\(([A-Z])-([A-Z])\)$/i.test(term)) {
+          var m = term.match(/^\(([A-Z])-([A-Z])\)$/i);
+          var startC = m[1].toUpperCase().charCodeAt(0);
+          var endC = m[2].toUpperCase().charCodeAt(0);
+          var pCode = parsed.priority ? parsed.priority.charCodeAt(0) : -1;
+          result = pCode >= Math.min(startC, endC) && pCode <= Math.max(startC, endC);
+        } else if (lower.indexOf('priority:') === 0) {
+          var pVal = lower.slice(9).toUpperCase();
+          result = parsed.priority === pVal;
+        } else if (lower === 'due:today') {
+          result = parsed.due === todayISO();
+        } else if (lower === 'due:overdue') {
+          result = Boolean(parsed.due && !parsed.completed && parsed.due < todayISO());
+        } else if (lower === 'has:due') {
+          result = Boolean(parsed.due);
+        } else if (term.charAt(0) === '+') {
+          var proj = term.slice(1).toLowerCase();
+          result = parsed.projects.some(function (p) { return p.toLowerCase() === proj || p.toLowerCase().indexOf(proj) !== -1; });
+        } else if (term.charAt(0) === '@') {
+          var ctx = term.slice(1).toLowerCase();
+          result = parsed.contexts.some(function (c) { return c.toLowerCase() === ctx || c.toLowerCase().indexOf(ctx) !== -1; });
+        } else {
+          result = parsed.raw.toLowerCase().indexOf(lower) !== -1;
+        }
+
+        return negate ? !result : result;
+      }
+
+      function matchesQuery(parsed, query) {
+        var q = String(query || '').trim();
+        if (!q) return true;
+        var orGroups = q.split(/\s+OR\s+/);
+        for (var i = 0; i < orGroups.length; i++) {
+          var terms = orGroups[i].trim().split(/\s+/);
+          var allMatch = true;
+          for (var j = 0; j < terms.length; j++) {
+            if (!matchesSingleTerm(parsed, terms[j])) {
+              allMatch = false;
+              break;
+            }
+          }
+          if (allMatch) return true;
+        }
+        return false;
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
+          localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(state.filters));
+          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
+            activeFilterId: state.activeFilterId,
+            sortBy: state.sortBy
+          }));
+          localStorage.setItem(STORAGE_KEYS.INIT, '1');
+        } catch (err) {
+          showToast('Storage warning: could not persist locally.');
+        }
+      }
+
+      function loadState() {
+        try {
+          var isInit = localStorage.getItem(STORAGE_KEYS.INIT);
+          var rawTasks = localStorage.getItem(STORAGE_KEYS.TASKS);
+          var rawFilters = localStorage.getItem(STORAGE_KEYS.FILTERS);
+          var rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+
+          if (!isInit && !rawTasks) {
+            state.tasks = SAMPLE_TASKS.map(function (line) {
+              return { id: uid(), raw: line };
+            });
+            state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+            saveState();
+            return;
+          }
+
+          if (rawTasks) {
+            var parsedTasks = JSON.parse(rawTasks);
+            if (Array.isArray(parsedTasks)) {
+              state.tasks = parsedTasks.filter(function (t) { return t && typeof t.raw === 'string'; });
+            }
+          }
+
+          if (rawFilters) {
+            var parsedFilters = JSON.parse(rawFilters);
+            if (Array.isArray(parsedFilters) && parsedFilters.length > 0) {
+              state.filters = parsedFilters;
+            } else {
+              state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+            }
+          } else {
+            state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+          }
+
+          if (rawSettings) {
+            var s = JSON.parse(rawSettings);
+            if (s.activeFilterId) state.activeFilterId = s.activeFilterId;
+            if (s.sortBy) state.sortBy = s.sortBy;
+          }
+        } catch (err) {
+          state.tasks = [];
+          state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+        }
+      }
+
+      function getFilteredAndSortedTasks() {
+        var activeFilter = state.filters.find(function (f) { return f.id === state.activeFilterId; });
+        var filterQuery = activeFilter ? activeFilter.query : '';
+        var search = state.searchQuery.trim().toLowerCase();
+
+        var enriched = [];
+        for (var i = 0; i < state.tasks.length; i++) {
+          var task = state.tasks[i];
+          var parsed = parseTodoLine(task.raw);
+          if (!matchesQuery(parsed, filterQuery)) continue;
+          if (search && parsed.raw.toLowerCase().indexOf(search) === -1) continue;
+          enriched.push({ task: task, parsed: parsed, index: i });
+        }
+
+        enriched.sort(function (a, b) {
+          if (state.sortBy === 'priority') {
+            if (a.parsed.completed !== b.parsed.completed) {
+              return a.parsed.completed ? 1 : -1;
+            }
+            var pa = a.parsed.priority || 'ZZ';
+            var pb = b.parsed.priority || 'ZZ';
+            if (pa !== pb) return pa < pb ? -1 : 1;
+            return a.index - b.index;
+          }
+          if (state.sortBy === 'alpha') {
+            return a.parsed.content.localeCompare(b.parsed.content);
+          }
+          if (state.sortBy === 'due') {
+            if (a.parsed.completed !== b.parsed.completed) {
+              return a.parsed.completed ? 1 : -1;
+            }
+            var da = a.parsed.due || '9999-99-99';
+            var db = b.parsed.due || '9999-99-99';
+            if (da !== db) return da < db ? -1 : 1;
+            return a.index - b.index;
+          }
+          return a.index - b.index;
+        });
+
+        return enriched;
+      }
+
+      function countForFilter(query) {
+        var count = 0;
+        for (var i = 0; i < state.tasks.length; i++) {
+          var parsed = parseTodoLine(state.tasks[i].raw);
+          if (matchesQuery(parsed, query)) count++;
+        }
+        return count;
+      }
+
+      function renderFilterButtons() {
+        var container = document.getElementById('filterButtonsContainer');
+        container.innerHTML = '';
+
+        var visibleFilters = state.filters.filter(function (f) { return f.visible !== false; });
+        if (!visibleFilters.some(function (f) { return f.id === state.activeFilterId; }) && visibleFilters.length > 0) {
+          state.activeFilterId = visibleFilters[0].id;
+        }
+
+        visibleFilters.forEach(function (f) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'filter-btn' + (f.id === state.activeFilterId ? ' active' : '');
+          btn.setAttribute('role', 'tab');
+          btn.setAttribute('aria-selected', f.id === state.activeFilterId ? 'true' : 'false');
+          btn.dataset.color = f.color || 'blue';
+          btn.title = f.query ? 'Rule: ' + f.query : 'Show all tasks';
+
+          var labelSpan = document.createElement('span');
+          labelSpan.textContent = f.label;
+
+          var countSpan = document.createElement('span');
+          countSpan.className = 'filter-count';
+          countSpan.textContent = String(countForFilter(f.query));
+
+          btn.appendChild(labelSpan);
+          btn.appendChild(countSpan);
+
+          btn.addEventListener('click', function () {
+            state.activeFilterId = f.id;
+            saveState();
+            render();
+          });
+
+          container.appendChild(btn);
+        });
+      }
+
+      function renderTasks() {
+        var listEl = document.getElementById('taskList');
+        var emptyEl = document.getElementById('emptyState');
+        var summaryEl = document.getElementById('taskSummary');
+
+        var total = state.tasks.length;
+        var openCount = state.tasks.filter(function (t) { return !parseTodoLine(t.raw).completed; }).length;
+        var items = getFilteredAndSortedTasks();
+
+        summaryEl.textContent = items.length + ' shown · ' + openCount + ' open · ' + total + ' total';
+        listEl.innerHTML = '';
+
+        if (items.length === 0) {
+          emptyEl.style.display = 'block';
+          document.getElementById('emptyMessage').textContent = total === 0
+            ? 'No tasks yet. Add one above in todo.txt format.'
+            : 'No tasks match this filter or search.';
+          return;
+        }
+
+        emptyEl.style.display = 'none';
+
+        items.forEach(function (entry) {
+          var task = entry.task;
+          var parsed = entry.parsed;
+
+          var li = document.createElement('li');
+          li.className = 'task-row' + (parsed.completed ? ' completed' : '');
+
+          var checkBtn = document.createElement('button');
+          checkBtn.type = 'button';
+          checkBtn.className = 'task-check-btn';
+          checkBtn.setAttribute('aria-label', parsed.completed ? 'Mark incomplete' : 'Mark complete');
+          checkBtn.innerHTML = parsed.completed ? '&#10003;' : '';
+          checkBtn.addEventListener('click', function () {
+            task.raw = toggleRawCompletion(task.raw);
+            saveState();
+            render();
+          });
+
+          li.appendChild(checkBtn);
+
+          if (state.editingTaskId === task.id) {
+            var editInput = document.createElement('input');
+            editInput.type = 'text';
+            editInput.className = 'task-edit-input';
+            editInput.value = task.raw;
+            editInput.setAttribute('aria-label', 'Edit raw todo.txt line');
+
+            var committed = false;
+            function commitEdit() {
+              if (committed) return;
+              committed = true;
+              var val = editInput.value.trim();
+              if (val) {
+                task.raw = val;
+                saveState();
+              }
+              state.editingTaskId = null;
+              render();
+            }
+
+            editInput.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commitEdit();
+              } else if (e.key === 'Escape') {
+                committed = true;
+                state.editingTaskId = null;
+                render();
+              }
+            });
+
+            editInput.addEventListener('blur', commitEdit);
+            li.appendChild(editInput);
+
+            setTimeout(function () {
+              editInput.focus();
+              editInput.setSelectionRange(editInput.value.length, editInput.value.length);
+            }, 0);
+          } else {
+            var contentBtn = document.createElement('button');
+            contentBtn.type = 'button';
+            contentBtn.className = 'task-content';
+            contentBtn.textContent = parsed.content;
+            contentBtn.title = 'Click to edit task';
+            contentBtn.addEventListener('click', function () {
+              state.editingTaskId = task.id;
+              renderTasks();
+            });
+            li.appendChild(contentBtn);
+          }
+
+          var removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'task-remove-btn';
+          removeBtn.setAttribute('aria-label', 'Remove task');
+          removeBtn.innerHTML = '&times;';
+          removeBtn.addEventListener('click', function () {
+            removeTaskSingleTap(task.id);
+          });
+
+          li.appendChild(removeBtn);
+          listEl.appendChild(li);
+        });
+      }
+
+      function removeTaskSingleTap(taskId) {
+        var idx = state.tasks.findIndex(function (t) { return t.id === taskId; });
+        if (idx === -1) return;
+        state.undoSnapshot = state.tasks.slice();
+        state.tasks.splice(idx, 1);
+        if (state.editingTaskId === taskId) state.editingTaskId = null;
+        saveState();
+        render();
+        showToast('Task removed', true);
+      }
+
+      function showToast(msg, allowUndo) {
+        var toast = document.getElementById('toast');
+        var toastMsg = document.getElementById('toastMessage');
+        var undoBtn = document.getElementById('toastUndoBtn');
+
+        toastMsg.textContent = msg;
+        undoBtn.style.display = allowUndo ? 'inline' : 'none';
+        toast.classList.add('visible');
+
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove('visible');
+          state.undoSnapshot = null;
+        }, 4000);
+      }
+
+      function renderCustomFilterModalList() {
+        var container = document.getElementById('customFilterList');
+        container.innerHTML = '';
+
+        state.filters.forEach(function (f, index) {
+          var row = document.createElement('div');
+          row.className = 'custom-filter-item';
+
+          var meta = document.createElement('div');
+          meta.className = 'custom-filter-meta';
+
+          var name = document.createElement('div');
+          name.className = 'custom-filter-name';
+          name.textContent = f.label + (f.visible === false ? ' (Hidden)' : '');
+
+          var query = document.createElement('div');
+          query.className = 'custom-filter-query';
+          query.textContent = f.query || '(shows all tasks)';
+
+          meta.appendChild(name);
+          meta.appendChild(query);
+
+          var actions = document.createElement('div');
+          actions.className = 'custom-filter-actions';
+
+          var upBtn = document.createElement('button');
+          upBtn.type = 'button';
+          upBtn.className = 'btn btn-sm btn-icon';
+          upBtn.textContent = '↑';
+          upBtn.title = 'Move up';
+          upBtn.disabled = index === 0;
+          upBtn.addEventListener('click', function () {
+            if (index > 0) {
+              var tmp = state.filters[index - 1];
+              state.filters[index - 1] = state.filters[index];
+              state.filters[index] = tmp;
+              saveState();
+              render();
+              renderCustomFilterModalList();
+            }
+          });
+
+          var visBtn = document.createElement('button');
+          visBtn.type = 'button';
+          visBtn.className = 'btn btn-sm';
+          visBtn.textContent = f.visible === false ? 'Show' : 'Hide';
+          visBtn.addEventListener('click', function () {
+            f.visible = f.visible === false;
+            saveState();
+            render();
+            renderCustomFilterModalList();
+          });
+
+          var editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'btn btn-sm';
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', function () {
+            state.editingFilterId = f.id;
+            document.getElementById('filterLabelInput').value = f.label;
+            document.getElementById('filterQueryInput').value = f.query;
+            document.getElementById('filterColorSelect').value = f.color || 'blue';
+            document.getElementById('filterFormHeading').textContent = 'Edit Filter Button';
+            document.getElementById('saveFilterBtn').textContent = 'Update Button';
+            document.getElementById('cancelFilterEditBtn').style.display = 'inline-flex';
+          });
+
+          var delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn btn-sm btn-danger';
+          delBtn.textContent = 'Delete';
+          delBtn.disabled = state.filters.length <= 1;
+          delBtn.addEventListener('click', function () {
+            state.filters = state.filters.filter(function (item) { return item.id !== f.id; });
+            if (state.activeFilterId === f.id && state.filters.length > 0) {
+              state.activeFilterId = state.filters[0].id;
+            }
+            saveState();
+            render();
+            renderCustomFilterModalList();
+          });
+
+          actions.appendChild(upBtn);
+          actions.appendChild(visBtn);
+          actions.appendChild(editBtn);
+          actions.appendChild(delBtn);
+
+          row.appendChild(meta);
+          row.appendChild(actions);
+          container.appendChild(row);
+        });
+      }
+
+      function resetFilterForm() {
+        state.editingFilterId = null;
+        document.getElementById('filterLabelInput').value = '';
+        document.getElementById('filterQueryInput').value = '';
+        document.getElementById('filterColorSelect').value = 'blue';
+        document.getElementById('filterFormHeading').textContent = 'Add Custom Filter Button';
+        document.getElementById('saveFilterBtn').textContent = 'Add Button';
+        document.getElementById('cancelFilterEditBtn').style.display = 'none';
+      }
+
+      function downloadFile(filename, content, mimeType) {
+        var blob = new Blob([content], { type: mimeType });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function importLines(lines, mode) {
+        var clean = lines
+          .map(function (l) { return String(l).trim(); })
+          .filter(function (l) { return l.length > 0; });
+
+        if (clean.length === 0) {
+          showToast('No valid task lines found.');
+          return;
+        }
+
+        if (mode === 'replace') {
+          state.tasks = clean.map(function (raw) { return { id: uid(), raw: raw }; });
+        } else {
+          var existingSet = {};
+          state.tasks.forEach(function (t) { existingSet[t.raw] = true; });
+          clean.forEach(function (raw) {
+            if (!existingSet[raw]) {
+              state.tasks.push({ id: uid(), raw: raw });
+              existingSet[raw] = true;
+            }
+          });
+        }
+
+        saveState();
+        render();
+        showToast('Imported ' + clean.length + ' task(s).');
+      }
+
+      function render() {
+        document.getElementById('sortSelect').value = state.sortBy;
+        renderFilterButtons();
+        renderTasks();
+      }
+
+      function bindEvents() {
+        document.getElementById('addForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var input = document.getElementById('addInput');
+          var raw = input.value.trim();
+          if (!raw) return;
+          state.tasks.unshift({ id: uid(), raw: raw });
+          input.value = '';
+          saveState();
+          render();
+        });
+
+        var searchInput = document.getElementById('searchInput');
+        var clearSearchBtn = document.getElementById('clearSearchBtn');
+
+        searchInput.addEventListener('input', function () {
+          state.searchQuery = searchInput.value;
+          clearSearchBtn.classList.toggle('visible', state.searchQuery.length > 0);
+          renderTasks();
+        });
+
+        clearSearchBtn.addEventListener('click', function () {
+          state.searchQuery = '';
+          searchInput.value = '';
+          clearSearchBtn.classList.remove('visible');
+          renderTasks();
+          searchInput.focus();
+        });
+
+        document.getElementById('sortSelect').addEventListener('change', function (e) {
+          state.sortBy = e.target.value;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('resetFilterBtn').addEventListener('click', function () {
+          state.searchQuery = '';
+          searchInput.value = '';
+          clearSearchBtn.classList.remove('visible');
+          if (state.filters.length > 0) {
+            state.filters[0].visible = true;
+            state.activeFilterId = state.filters[0].id;
+          }
+          saveState();
+          render();
+        });
+
+        document.getElementById('toastUndoBtn').addEventListener('click', function () {
+          if (state.undoSnapshot) {
+            state.tasks = state.undoSnapshot;
+            state.undoSnapshot = null;
+            saveState();
+            render();
+            document.getElementById('toast').classList.remove('visible');
+          }
+        });
+
+        // Filters Modal
+        var filtersModal = document.getElementById('filtersModal');
+        document.getElementById('openFiltersBtn').addEventListener('click', function () {
+          resetFilterForm();
+          renderCustomFilterModalList();
+          filtersModal.classList.add('open');
+        });
+        document.getElementById('closeFiltersBtn').addEventListener('click', function () {
+          filtersModal.classList.remove('open');
+        });
+        filtersModal.addEventListener('click', function (e) {
+          if (e.target === filtersModal) filtersModal.classList.remove('open');
+        });
+
+        document.getElementById('cancelFilterEditBtn').addEventListener('click', resetFilterForm);
+
+        document.getElementById('newFilterForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var label = document.getElementById('filterLabelInput').value.trim();
+          var query = document.getElementById('filterQueryInput').value.trim();
+          var color = document.getElementById('filterColorSelect').value;
+          if (!label) return;
+
+          if (state.editingFilterId) {
+            var target = state.filters.find(function (f) { return f.id === state.editingFilterId; });
+            if (target) {
+              target.label = label;
+              target.query = query;
+              target.color = color;
+            }
+          } else {
+            state.filters.push({
+              id: 'f_' + Date.now().toString(36),
+              label: label,
+              query: query,
+              color: color,
+              visible: true
+            });
+          }
+
+          resetFilterForm();
+          saveState();
+          render();
+          renderCustomFilterModalList();
+        });
+
+        document.getElementById('resetDefaultFiltersBtn').addEventListener('click', function () {
+          state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+          state.activeFilterId = 'f_all';
+          resetFilterForm();
+          saveState();
+          render();
+          renderCustomFilterModalList();
+        });
+
+        // Backup Modal
+        var backupModal = document.getElementById('backupModal');
+        document.getElementById('openBackupBtn').addEventListener('click', function () {
+          backupModal.classList.add('open');
+        });
+        document.getElementById('closeBackupBtn').addEventListener('click', function () {
+          backupModal.classList.remove('open');
+        });
+        backupModal.addEventListener('click', function (e) {
+          if (e.target === backupModal) backupModal.classList.remove('open');
+        });
+
+        document.getElementById('exportTxtBtn').addEventListener('click', function () {
+          var content = state.tasks.map(function (t) { return t.raw; }).join('\n');
+          downloadFile('todo_' + todayISO() + '.txt', content, 'text/plain;charset=utf-8');
+          showToast('Exported todo.txt');
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', function () {
+          var payload = JSON.stringify({
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            tasks: state.tasks,
+            filters: state.filters,
+            sortBy: state.sortBy
+          }, null, 2);
+          downloadFile('todotxt_backup_' + todayISO() + '.json', payload, 'application/json;charset=utf-8');
+          showToast('Exported full JSON backup');
+        });
+
+        document.getElementById('copyRawBtn').addEventListener('click', function () {
+          var content = state.tasks.map(function (t) { return t.raw; }).join('\n');
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(content).then(function () {
+              showToast('Copied ' + state.tasks.length + ' lines to clipboard');
+            });
+          } else {
+            document.getElementById('pasteImportTextarea').value = content;
+            showToast('Lines placed in text area below');
+          }
+        });
+
+        document.getElementById('pickFileBtn').addEventListener('click', function () {
+          document.getElementById('importFileInput').click();
+        });
+
+        document.getElementById('importFileInput').addEventListener('change', function (e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            var text = String(ev.target.result || '');
+            var mode = document.getElementById('importModeSelect').value;
+
+            if (file.name.toLowerCase().endsWith('.json') || text.trim().startsWith('{')) {
+              try {
+                var obj = JSON.parse(text);
+                if (Array.isArray(obj.tasks)) {
+                  var lines = obj.tasks.map(function (t) { return typeof t === 'string' ? t : t.raw; });
+                  if (mode === 'replace' && Array.isArray(obj.filters) && obj.filters.length > 0) {
+                    state.filters = obj.filters;
+                  }
+                  importLines(lines, mode);
+                  backupModal.classList.remove('open');
+                  return;
+                }
+              } catch (err) {
+                // fallback to line import
+              }
+            }
+
+            importLines(text.split(/\r?\n/), mode);
+            backupModal.classList.remove('open');
+          };
+          reader.readAsText(file);
+          e.target.value = '';
+        });
+
+        document.getElementById('applyPasteImportBtn').addEventListener('click', function () {
+          var textarea = document.getElementById('pasteImportTextarea');
+          var text = textarea.value.trim();
+          if (!text) return;
+          var mode = document.getElementById('importModeSelect').value;
+          importLines(text.split(/\r?\n/), mode);
+          textarea.value = '';
+          backupModal.classList.remove('open');
+        });
+
+        document.getElementById('clearCompletedBtn').addEventListener('click', function () {
+          var before = state.tasks.length;
+          state.undoSnapshot = state.tasks.slice();
+          state.tasks = state.tasks.filter(function (t) { return !parseTodoLine(t.raw).completed; });
+          var removed = before - state.tasks.length;
+          saveState();
+          render();
+          backupModal.classList.remove('open');
+          if (removed > 0) {
+            showToast('Purged ' + removed + ' completed task(s)', true);
+          } else {
+            showToast('No completed tasks to purge');
+          }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+          var tag = (document.activeElement && document.activeElement.tagName) || '';
+          var isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+          if (e.key === 'Escape') {
+            filtersModal.classList.remove('open');
+            backupModal.classList.remove('open');
+            if (state.editingTaskId) {
+              state.editingTaskId = null;
+              renderTasks();
+            }
+            return;
+          }
+
+          if (!isTyping && e.key === '/') {
+            e.preventDefault();
+            searchInput.focus();
+          } else if (!isTyping && e.key === 'n') {
+            e.preventDefault();
+            document.getElementById('addInput').focus();
+          }
+        });
+      }
+
+      loadState();
+      bindEvents();
+      render();
+    })();
+  </script>
+</body>
+</html>

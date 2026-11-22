@@ -1,0 +1,6 @@
+{
+  "name": "TODOTXT",
+  "description": "Compact dark-mode offline todo.txt task manager with local persistence, customizable filter buttons, and backup/restore.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
