@@ -8,13 +8,14 @@ A clean, minimalist, dark-mode `todo.txt` task manager designed for maximum info
   - All HTML, CSS, and JavaScript live inside a single `TODOTXT.html` file with zero external dependencies or network requests.
   - Can be opened directly from your filesystem (`file://`) on desktop or mobile, or downloaded from **Backup & Restore → Download Offline TODOTXT.html**.
 
-- **Compact Dark-Mode Design (`10px` Task Rows)**
+- **Compact Dark-Mode Design (`10px` Task Rows) & Bottom Add Bar**
   - Ultra-compact dark interface with `10px` task typography and tight row spacing to maximize how many tasks fit on screen at once.
+  - Dedicated **Add Task** bar docked at the bottom of the screen for quick entry while keeping search and filter controls at the top.
   - Fully responsive layout across mobile and desktop viewports.
 
 - **Clean Content-Only Display & `todo.txt` Compatibility**
   - Follows the standard `todo.txt` specification (`x YYYY-MM-DD`, `(A)`–`(Z)` priorities, creation dates, `+projects`, `@contexts`, and `key:value` metadata such as `due:YYYY-MM-DD`).
-  - Automatically hides `todo.txt` metadata tokens in the list view so only the readable task content is shown.
+  - Automatically hides `todo.txt` prefix/key-value metadata in the list view while extracting `+project` and `@context` tags as compact, clickable pill-labels—click any tag pill to instantly filter the list for that tag (and click again or use `Esc` to clear).
   - Priority `(A)` tasks render in **bold** by default (configurable in **Settings**).
   - Click any task row to edit the complete raw `todo.txt` line inline (`Enter` to save, `Esc` to cancel), with quick-select priority buttons `(A)` through `(F)` and `None`.
 
@@ -22,6 +23,10 @@ A clean, minimalist, dark-mode `todo.txt` task manager designed for maximum info
   - **Single-tap remove (`×`)** deletes a task immediately, paired with a 4-second **Undo** toast notification.
   - **Single-tap check** toggles completion status (`x YYYY-MM-DD ...`).
   - **Priority Checkbox & Font Colors**: Customize both checkbox colors and task font colors for priorities `(A)` through `(F)` in **Settings**.
+
+- **Task Analytics Dashboard**
+  - Accessible directly from the **Analytics** button in the main header.
+  - Visualizes **Task Completion Trends Over Time** (added vs. completed tasks by date) and **Project Distribution** (`+project` open vs. completed breakdown), powered by `recharts` in the web app and zero-dependency SVG charts in the offline `TODOTXT.html` file.
 
 - **Dark-Mode Themes, Classic Pagination & `localStorage` Cache**
   - **Theme Presets**: Switch between **Midnight**, **Slate**, **Zinc**, **Neutral**, **Stone**, and **Forest** dark-mode themes in **Settings**.
@@ -42,16 +47,16 @@ A clean, minimalist, dark-mode `todo.txt` task manager designed for maximum info
     - Due dates: `due:today`, `due:overdue`, `has:due`
     - Boolean logic: space-separated `AND`, `OR`, and `-` negation (e.g., `-@waiting`)
 
-- **Local Backup & Restore**
-  - **Export `todo.txt`**: Download standard plain-text lines compatible with any `todo.txt` client.
-  - **Export Full JSON**: Back up tasks, custom filter buttons, and sort settings in a single `.json` file.
-  - **Copy `todo.txt`**: Copy all raw lines directly to the clipboard.
-  - **Restore / Import**: Import from `.txt` or `.json` files or paste raw lines directly, choosing between **Merge unique** and **Replace all** modes, plus **Purge Completed**.
+- **Local Backup & Restore (Tasks, Settings & Custom Views)**
+  - **Export Full Backup (`.json`)**: Back up all tasks alongside your **Settings** (theme, priority colors, pagination size, sort order) and **Custom Filter Views** in a single `.json` file.
+  - **Export Settings & Views (`.json`)**: Export only your settings and custom filter views for easy reuse across workspaces.
+  - **Export `todo.txt` / Copy**: Download standard plain-text lines or copy raw lines directly to the clipboard.
+  - **Restore / Import**: Import from `.txt` or `.json` files (or paste JSON/raw lines directly) with **Merge unique** or **Replace all** modes and a toggle to restore settings & custom filter views from `.json` backups, plus **Purge Completed**.
 
 ## Keyboard Shortcuts
 
 - `/` — Focus search bar
-- `n` — Focus new task input
+- `n` — Focus bottom new task input
 - `Enter` — Save new task or commit inline edit
 - `Esc` — Cancel inline edit or close open modals
 

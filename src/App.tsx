@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowUp,
+  BarChart3,
   Check,
   Download,
   FileDown,
@@ -13,6 +14,17 @@ import {
   Upload,
   X,
 } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 type FilterColor = 'blue' | 'amber' | 'emerald' | 'rose' | 'violet' | 'sky';
 type SortMode = 'priority' | 'added' | 'alpha' | 'due';
@@ -209,8 +221,10 @@ const SAMPLE_TASKS: string[] = [
   '(D) 2026-11-18 Backup photo library to external drive +Maintenance @home',
   '(E) 2026-11-18 Organize digital receipts folder +Finance @computer',
   '(F) 2026-11-17 Read backup verification checklist +Ops @reading',
-  '2026-11-17 Water indoor plants +Home @errands',
+  'x 2026-11-24 2026-11-21 Ship offline backup validator +Work @laptop',
+  'x 2026-11-23 2026-11-19 Pay monthly utility bills +Finance @computer',
   'x 2026-11-22 2026-11-15 Sync local storage export test +Work @laptop',
+  'x 2026-11-20 2026-11-17 Clean inbox and archive receipts +Home @computer',
 ];
 
 function todayISO(): string {
@@ -263,9 +277,15 @@ function parseTodoLine(raw: string): ParsedTodo {
 
   for (const tok of tokens) {
     if (/^\+\S+/.test(tok)) {
-      projects.push(tok.slice(1));
+      const p = tok.slice(1);
+      if (!projects.some((existing) => existing.toLowerCase() === p.toLowerCase())) {
+        projects.push(p);
+      }
     } else if (/^@\S+/.test(tok)) {
-      contexts.push(tok.slice(1));
+      const c = tok.slice(1);
+      if (!contexts.some((existing) => existing.toLowerCase() === c.toLowerCase())) {
+        contexts.push(c);
+      }
     } else if (/^[a-zA-Z][a-zA-Z0-9_-]*:[^\s]+$/.test(tok) && !/^https?:\/\//i.test(tok)) {
       const colonIdx = tok.indexOf(':');
       const k = tok.slice(0, colonIdx).toLowerCase();
@@ -276,7 +296,12 @@ function parseTodoLine(raw: string): ParsedTodo {
     }
   }
 
-  const content = contentParts.join(' ').trim() || remaining || text;
+  const content =
+    contentParts.length > 0
+      ? contentParts.join(' ').trim()
+      : projects.length > 0 || contexts.length > 0
+        ? ''
+        : remaining || text;
 
   return {
     raw: text,
@@ -608,9 +633,11 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [newTaskText, setNewTaskText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskDraft, setEditingTaskDraft] = useState('');
 
+  const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [backupModalOpen, setBackupModalOpen] = useState(false);
@@ -621,6 +648,7 @@ export default function App() {
   const [filterColorInput, setFilterColorInput] = useState<FilterColor>('blue');
 
   const [importMode, setImportMode] = useState<ImportMode>('merge');
+  const [restoreSettingsOnImport, setRestoreSettingsOnImport] = useState(true);
   const [pasteImportText, setPasteImportText] = useState('');
 
   const [toast, setToast] = useState<{ message: string; canUndo: boolean } | null>(null);
@@ -632,6 +660,8 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editWrapRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
+
+  const activeTheme = THEMES[theme] || THEMES.midnight;
 
   // Apply active theme CSS variables
   useEffect(() => {
@@ -698,10 +728,16 @@ export default function App() {
       const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 
       if (e.key === 'Escape') {
+        const hadOverlayOrEdit =
+          analyticsModalOpen || filtersModalOpen || settingsModalOpen || backupModalOpen || editingTaskId !== null;
+        setAnalyticsModalOpen(false);
         setFiltersModalOpen(false);
         setSettingsModalOpen(false);
         setBackupModalOpen(false);
         setEditingTaskId(null);
+        if (!hadOverlayOrEdit) {
+          setSelectedTag(null);
+        }
         return;
       }
 
@@ -759,9 +795,19 @@ export default function App() {
   const displayedTasks = useMemo(() => {
     const filterQuery = effectiveActiveFilter?.query || '';
     const search = searchQuery.trim().toLowerCase();
+    const tagLower = selectedTag ? selectedTag.toLowerCase() : null;
 
     const matched = parsedTasks.filter(({ parsed }) => {
       if (!matchesQuery(parsed, filterQuery)) return false;
+      if (tagLower) {
+        if (tagLower.startsWith('+')) {
+          const target = tagLower.slice(1);
+          if (!parsed.projects.some((p) => p.toLowerCase() === target)) return false;
+        } else if (tagLower.startsWith('@')) {
+          const target = tagLower.slice(1);
+          if (!parsed.contexts.some((c) => c.toLowerCase() === target)) return false;
+        }
+      }
       if (search && !parsed.raw.toLowerCase().includes(search)) return false;
       return true;
     });
@@ -777,7 +823,9 @@ export default function App() {
         return a.index - b.index;
       }
       if (sortBy === 'alpha') {
-        return a.parsed.content.localeCompare(b.parsed.content);
+        const ta = a.parsed.content || a.parsed.raw;
+        const tb = b.parsed.content || b.parsed.raw;
+        return ta.localeCompare(tb);
       }
       if (sortBy === 'due') {
         if (a.parsed.completed !== b.parsed.completed) {
@@ -790,7 +838,7 @@ export default function App() {
       }
       return a.index - b.index;
     });
-  }, [parsedTasks, effectiveActiveFilter, searchQuery, sortBy]);
+  }, [parsedTasks, effectiveActiveFilter, searchQuery, selectedTag, sortBy]);
 
   const safePageSize = Math.max(1, pageSize || 10);
   const totalPages = Math.max(1, Math.ceil(displayedTasks.length / safePageSize));
@@ -816,6 +864,59 @@ export default function App() {
     () => parsedTasks.filter((t) => !t.parsed.completed).length,
     [parsedTasks]
   );
+
+  const completedCount = tasks.length - openCount;
+  const completionRate = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+
+  // Analytics datasets for Recharts
+  const completionTrendData = useMemo(() => {
+    const map: Record<string, { created: number; completed: number }> = {};
+    for (const { parsed } of parsedTasks) {
+      if (parsed.creationDate) {
+        if (!map[parsed.creationDate]) map[parsed.creationDate] = { created: 0, completed: 0 };
+        map[parsed.creationDate].created++;
+      }
+      if (parsed.completed && parsed.completionDate) {
+        if (!map[parsed.completionDate]) map[parsed.completionDate] = { created: 0, completed: 0 };
+        map[parsed.completionDate].completed++;
+      }
+    }
+    let runningCompleted = 0;
+    return Object.keys(map)
+      .sort()
+      .map((date) => {
+        runningCompleted += map[date].completed;
+        return {
+          date: date.slice(5),
+          fullDate: date,
+          created: map[date].created,
+          completed: map[date].completed,
+          cumulativeDone: runningCompleted,
+        };
+      });
+  }, [parsedTasks]);
+
+  const projectDistributionData = useMemo(() => {
+    const map: Record<string, { open: number; done: number }> = {};
+    for (const { parsed } of parsedTasks) {
+      const keys = parsed.projects.length > 0 ? parsed.projects : ['(No Project)'];
+      for (const proj of keys) {
+        const label = proj === '(No Project)' ? proj : `+${proj}`;
+        if (!map[label]) map[label] = { open: 0, done: 0 };
+        if (parsed.completed) map[label].done++;
+        else map[label].open++;
+      }
+    }
+    return Object.keys(map)
+      .map((project) => ({
+        project,
+        open: map[project].open,
+        done: map[project].done,
+        total: map[project].open + map[project].done,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+  }, [parsedTasks]);
 
   const editingDraftPriority = useMemo(
     () => parseTodoLine(editingTaskDraft).priority,
@@ -855,6 +956,12 @@ export default function App() {
   const handleQuickPriority = (letter: PriorityKey | null) => {
     setEditingTaskDraft((prev) => applyPriorityPrefix(prev, letter));
     editInputRef.current?.focus();
+  };
+
+  const handleTagClick = (tag: string) => {
+    setSelectedTag((prev) => (prev && prev.toLowerCase() === tag.toLowerCase() ? null : tag));
+    setCurrentPage(1);
+    setEditingTaskId(null);
   };
 
   const handleUndo = () => {
@@ -908,6 +1015,42 @@ export default function App() {
     });
   };
 
+  const buildSettingsPayload = () => ({
+    activeFilterId,
+    sortBy,
+    pageSize,
+    theme,
+    boldPriorityA,
+    colorizeCheckboxes,
+    priorityColors,
+    colorizeText,
+    priorityTextColors,
+  });
+
+  const applyImportedConfig = (obj: Record<string, unknown>) => {
+    if (Array.isArray(obj.filters) && obj.filters.length > 0) {
+      setFilters(migrateFiltersIfNeeded(obj.filters as FilterButtonConfig[]));
+    }
+    const s = (obj.settings && typeof obj.settings === 'object' ? obj.settings : obj) as Record<string, unknown>;
+    if (typeof s.activeFilterId === 'string') setActiveFilterId(s.activeFilterId);
+    if (typeof s.sortBy === 'string') setSortBy(s.sortBy as SortMode);
+    if (typeof s.pageSize === 'number' && s.pageSize >= 1) {
+      setPageSize(Math.min(500, Math.floor(s.pageSize)));
+    }
+    if (typeof s.theme === 'string' && THEMES[s.theme as ThemeKey]) {
+      setTheme(s.theme as ThemeKey);
+    }
+    if (typeof s.boldPriorityA === 'boolean') setBoldPriorityA(s.boldPriorityA);
+    if (typeof s.colorizeCheckboxes === 'boolean') setColorizeCheckboxes(s.colorizeCheckboxes);
+    if (s.priorityColors && typeof s.priorityColors === 'object') {
+      setPriorityColors({ ...DEFAULT_PRIORITY_COLORS, ...(s.priorityColors as Partial<Record<PriorityKey, string>>) });
+    }
+    if (typeof s.colorizeText === 'boolean') setColorizeText(s.colorizeText);
+    if (s.priorityTextColors && typeof s.priorityTextColors === 'object') {
+      setPriorityTextColors({ ...DEFAULT_TEXT_COLORS, ...(s.priorityTextColors as Partial<Record<PriorityKey, string>>) });
+    }
+  };
+
   const handleImportLines = (lines: string[], mode: ImportMode) => {
     const clean = lines.map((l) => l.trim()).filter((l) => l.length > 0);
     if (clean.length === 0) {
@@ -934,40 +1077,48 @@ export default function App() {
     showToast(`Imported ${clean.length} task(s).`);
   };
 
+  const handleBackupPayloadImport = (rawText: string) => {
+    const trimmed = rawText.trim();
+    if (!trimmed) return;
+
+    if (trimmed.startsWith('{')) {
+      try {
+        const obj = JSON.parse(trimmed) as Record<string, unknown>;
+        const hasConfig = Boolean(
+          obj.filters || obj.settings || obj.theme || obj.pageSize || obj.priorityColors || obj.priorityTextColors
+        );
+        if (restoreSettingsOnImport && hasConfig) {
+          applyImportedConfig(obj);
+        }
+        if (Array.isArray(obj.tasks) && obj.tasks.length > 0) {
+          const lines = obj.tasks.map((t: unknown) =>
+            typeof t === 'string' ? t : (t as { raw: string }).raw
+          );
+          handleImportLines(lines, importMode);
+          if (restoreSettingsOnImport && hasConfig) {
+            showToast('Restored tasks, custom views, and settings');
+          }
+          return;
+        }
+        if (restoreSettingsOnImport && hasConfig) {
+          showToast('Restored settings and custom filter views');
+          return;
+        }
+      } catch {
+        // fallback to line import
+      }
+    }
+
+    handleImportLines(trimmed.split(/\r?\n/), importMode);
+  };
+
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = String(ev.target?.result || '');
-      if (file.name.toLowerCase().endsWith('.json') || text.trim().startsWith('{')) {
-        try {
-          const obj = JSON.parse(text);
-          if (Array.isArray(obj.tasks)) {
-            const lines = obj.tasks.map((t: unknown) =>
-              typeof t === 'string' ? t : (t as { raw: string }).raw
-            );
-            if (importMode === 'replace') {
-              if (Array.isArray(obj.filters) && obj.filters.length > 0) {
-                setFilters(migrateFiltersIfNeeded(obj.filters));
-              }
-              if (typeof obj.pageSize === 'number' && obj.pageSize >= 1) setPageSize(obj.pageSize);
-              if (obj.theme && THEMES[obj.theme as ThemeKey]) setTheme(obj.theme as ThemeKey);
-              if (typeof obj.boldPriorityA === 'boolean') setBoldPriorityA(obj.boldPriorityA);
-              if (typeof obj.colorizeCheckboxes === 'boolean') setColorizeCheckboxes(obj.colorizeCheckboxes);
-              if (obj.priorityColors) setPriorityColors({ ...DEFAULT_PRIORITY_COLORS, ...obj.priorityColors });
-              if (typeof obj.colorizeText === 'boolean') setColorizeText(obj.colorizeText);
-              if (obj.priorityTextColors) setPriorityTextColors({ ...DEFAULT_TEXT_COLORS, ...obj.priorityTextColors });
-            }
-            handleImportLines(lines, importMode);
-            setBackupModalOpen(false);
-            return;
-          }
-        } catch {
-          // fallback to line import
-        }
-      }
-      handleImportLines(text.split(/\r?\n/), importMode);
+      handleBackupPayloadImport(text);
       setBackupModalOpen(false);
     };
     reader.readAsText(file);
@@ -998,7 +1149,7 @@ export default function App() {
 
   return (
     <div className="min-h-full bg-[var(--bg-canvas)] text-[var(--text-primary)]">
-      <div className="max-w-[1100px] mx-auto min-h-screen flex flex-col px-3 py-2.5 pb-6 gap-2">
+      <div className="max-w-[1100px] mx-auto min-h-screen flex flex-col px-3 py-2.5 pb-4 gap-2">
         {/* Top Bar */}
         <header className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[var(--border-subtle)]">
           <div className="flex items-baseline gap-2.5 min-w-0">
@@ -1011,6 +1162,15 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setAnalyticsModalOpen(true)}
+              className="inline-flex items-center gap-1.5 h-6 px-2 text-[11px] font-medium rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-strong)] transition-colors whitespace-nowrap shrink-0"
+            >
+              <BarChart3 className="w-3 h-3" />
+              <span>Analytics</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -1043,61 +1203,36 @@ export default function App() {
           </div>
         </header>
 
-        {/* Add & Search Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-1.5">
-          <form
-            onSubmit={handleAddTask}
-            className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded focus-within:border-[var(--accent)] transition-colors"
-          >
-            <input
-              ref={addInputRef}
-              type="text"
-              value={newTaskText}
-              onChange={(e) => setNewTaskText(e.target.value)}
-              placeholder="Add task in todo.txt format (e.g. (A) Buy milk +Home @errands due:2026-11-25)"
-              aria-label="New task in todo.txt format"
-              autoComplete="off"
-              className="w-full h-[30px] px-2.5 bg-transparent border-none text-[11px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
-            />
+        {/* Search Input (Top) */}
+        <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded focus-within:border-[var(--accent)] transition-colors">
+          <Search className="w-3 h-3 ml-2.5 text-[var(--text-muted)] shrink-0" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search tasks, +project, @context... (/)"
+            aria-label="Search tasks"
+            autoComplete="off"
+            className="w-full h-[30px] px-2 bg-transparent border-none text-[11px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
+          />
+          {searchQuery.length > 0 && (
             <button
-              type="submit"
-              className="inline-flex items-center gap-1 h-[22px] px-2 mr-1 rounded text-[10px] font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)] whitespace-nowrap shrink-0 transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              <span>Add</span>
-            </button>
-          </form>
-
-          <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded focus-within:border-[var(--accent)] transition-colors">
-            <Search className="w-3 h-3 ml-2.5 text-[var(--text-muted)] shrink-0" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
                 setCurrentPage(1);
+                searchInputRef.current?.focus();
               }}
-              placeholder="Search tasks, +project, @context... (/)"
-              aria-label="Search tasks"
-              autoComplete="off"
-              className="w-full h-[30px] px-2 bg-transparent border-none text-[11px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
-            />
-            {searchQuery.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setCurrentPage(1);
-                  searchInputRef.current?.focus();
-                }}
-                aria-label="Clear search"
-                className="inline-flex items-center justify-center w-5 h-5 mr-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
+              aria-label="Clear search"
+              className="inline-flex items-center justify-center w-5 h-5 mr-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         {/* Filter Buttons & Sort */}
@@ -1129,7 +1264,25 @@ export default function App() {
             })}
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {selectedTag && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTag(null);
+                  setCurrentPage(1);
+                }}
+                title={`Clear ${selectedTag} filter`}
+                className={`inline-flex items-center gap-1 h-6 px-2 rounded-full text-[10px] font-semibold border whitespace-nowrap transition-colors ${
+                  selectedTag.startsWith('+')
+                    ? 'bg-sky-500/20 border-sky-400/60 text-sky-200 hover:bg-sky-500/30'
+                    : 'bg-violet-500/20 border-violet-400/60 text-violet-200 hover:bg-violet-500/30'
+                }`}
+              >
+                <span>{selectedTag}</span>
+                <X className="w-2.5 h-2.5" />
+              </button>
+            )}
             <select
               value={sortBy}
               onChange={(e) => {
@@ -1154,13 +1307,14 @@ export default function App() {
               <div className="py-7 px-4 text-center text-[var(--text-secondary)] text-[11px]">
                 <p className="mb-2.5">
                   {tasks.length === 0
-                    ? 'No tasks yet. Add one above in todo.txt format.'
+                    ? 'No tasks yet. Add one below in todo.txt format.'
                     : 'No tasks match this filter or search.'}
                 </p>
                 <button
                   type="button"
                   onClick={() => {
                     setSearchQuery('');
+                    setSelectedTag(null);
                     setCurrentPage(1);
                     if (filters.length > 0) {
                       setFilters((prev) =>
@@ -1292,24 +1446,93 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <button
-                          type="button"
+                        <div
                           onClick={() => {
                             setEditingTaskId(task.id);
                             setEditingTaskDraft(task.raw);
                           }}
                           title="Click to edit task"
-                          style={textColor ? { color: textColor } : undefined}
-                          className={`flex-1 min-w-0 text-left text-[10px] leading-[1.35] tracking-[0.01em] py-0.5 break-words cursor-text ${
-                            isBoldA ? 'font-bold' : ''
-                          } ${
-                            parsed.completed
-                              ? 'text-[var(--text-muted)] line-through'
-                              : 'text-[var(--text-primary)]'
-                          }`}
+                          className="flex-1 min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 py-0.5 cursor-text"
                         >
-                          {parsed.content}
-                        </button>
+                          {parsed.content && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTaskId(task.id);
+                                setEditingTaskDraft(task.raw);
+                              }}
+                              style={textColor ? { color: textColor } : undefined}
+                              className={`text-left text-[10px] leading-[1.35] tracking-[0.01em] break-words cursor-text ${
+                                isBoldA ? 'font-bold' : ''
+                              } ${
+                                parsed.completed
+                                  ? 'text-[var(--text-muted)] line-through'
+                                  : 'text-[var(--text-primary)]'
+                              }`}
+                            >
+                              {parsed.content}
+                            </button>
+                          )}
+
+                          {parsed.projects.map((proj) => {
+                            const tag = `+${proj}`;
+                            const isTagActive =
+                              selectedTag?.toLowerCase() === tag.toLowerCase();
+                            return (
+                              <button
+                                key={`p_${proj}`}
+                                type="button"
+                                aria-pressed={isTagActive}
+                                title={
+                                  isTagActive
+                                    ? `Clear ${tag} filter`
+                                    : `Filter by ${tag}`
+                                }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTagClick(tag);
+                                }}
+                                className={`inline-flex items-center text-[9px] leading-none rounded-full px-1.5 py-[2px] border whitespace-nowrap transition-colors cursor-pointer ${
+                                  isTagActive
+                                    ? 'bg-sky-500/30 border-sky-400 text-sky-100 font-semibold'
+                                    : 'bg-sky-500/12 border-sky-500/30 text-sky-300 font-medium hover:bg-sky-500/25 hover:border-sky-400/60'
+                                } ${parsed.completed && !isTagActive ? 'opacity-60 hover:opacity-100' : ''}`}
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+
+                          {parsed.contexts.map((ctx) => {
+                            const tag = `@${ctx}`;
+                            const isTagActive =
+                              selectedTag?.toLowerCase() === tag.toLowerCase();
+                            return (
+                              <button
+                                key={`c_${ctx}`}
+                                type="button"
+                                aria-pressed={isTagActive}
+                                title={
+                                  isTagActive
+                                    ? `Clear ${tag} filter`
+                                    : `Filter by ${tag}`
+                                }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTagClick(tag);
+                                }}
+                                className={`inline-flex items-center text-[9px] leading-none rounded-full px-1.5 py-[2px] border whitespace-nowrap transition-colors cursor-pointer ${
+                                  isTagActive
+                                    ? 'bg-violet-500/30 border-violet-400 text-violet-100 font-semibold'
+                                    : 'bg-violet-500/12 border-violet-500/30 text-violet-300 font-medium hover:bg-violet-500/25 hover:border-violet-400/60'
+                                } ${parsed.completed && !isTagActive ? 'opacity-60 hover:opacity-100' : ''}`}
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
 
                       <button
@@ -1392,7 +1615,220 @@ export default function App() {
             </nav>
           )}
         </main>
+
+        {/* Add Task Input (Bottom Only) */}
+        <form
+          onSubmit={handleAddTask}
+          className="sticky bottom-2 z-10 flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded focus-within:border-[var(--accent)] transition-colors shadow-lg"
+        >
+          <input
+            ref={addInputRef}
+            type="text"
+            value={newTaskText}
+            onChange={(e) => setNewTaskText(e.target.value)}
+            placeholder="Add task in todo.txt format (e.g. (A) Buy milk +Home @errands due:2026-11-25) [n]"
+            aria-label="New task in todo.txt format"
+            autoComplete="off"
+            className="w-full h-[30px] px-2.5 bg-transparent border-none text-[11px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
+          />
+          <button
+            type="submit"
+            className="inline-flex items-center gap-1 h-[22px] px-2 mr-1 rounded text-[10px] font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)] whitespace-nowrap shrink-0 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            <span>Add</span>
+          </button>
+        </form>
       </div>
+
+      {/* Analytics Dashboard Modal (Recharts) */}
+      {analyticsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="analytics-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setAnalyticsModalOpen(false);
+          }}
+        >
+          <div className="w-full max-w-[760px] max-h-[88vh] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-4 flex flex-col gap-3.5">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border-subtle)]">
+              <h2 id="analytics-modal-title" className="text-[13px] font-semibold">
+                Task Analytics
+              </h2>
+              <button
+                type="button"
+                onClick={() => setAnalyticsModalOpen(false)}
+                aria-label="Close"
+                className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <div className="p-2.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                <div className="text-[10px] text-[var(--text-muted)]">Total Tasks</div>
+                <div className="text-[15px] font-bold tabular-nums mt-0.5">{tasks.length}</div>
+              </div>
+              <div className="p-2.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                <div className="text-[10px] text-[var(--text-muted)]">Open</div>
+                <div className="text-[15px] font-bold tabular-nums mt-0.5">{openCount}</div>
+              </div>
+              <div className="p-2.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                <div className="text-[10px] text-[var(--text-muted)]">Completed</div>
+                <div className="text-[15px] font-bold tabular-nums mt-0.5">{completedCount}</div>
+              </div>
+              <div className="p-2.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                <div className="text-[10px] text-[var(--text-muted)]">Completion Rate</div>
+                <div className="text-[15px] font-bold tabular-nums mt-0.5">{completionRate}%</div>
+              </div>
+            </div>
+
+            {/* Completion Trends Over Time */}
+            <div className="p-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-[var(--text-primary)]">
+                  Task Completion Trends Over Time
+                </span>
+                <div className="flex items-center gap-3 text-[10px] text-[var(--text-secondary)]">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-[2px] bg-[#22c55e]" />
+                    Completed
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-[2px]" style={{ backgroundColor: activeTheme.accent }} />
+                    Created
+                  </span>
+                </div>
+              </div>
+
+              {completionTrendData.length === 0 ? (
+                <div className="py-8 text-center text-[11px] text-[var(--text-muted)]">
+                  Add YYYY-MM-DD creation or completion dates to tasks to visualize trends over time.
+                </div>
+              ) : (
+                <div className="w-full h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={completionTrendData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="completedGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
+                        </linearGradient>
+                        <linearGradient id="createdGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={activeTheme.accent} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={activeTheme.accent} stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={activeTheme.borderSubtle} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fill: activeTheme.textMuted, fontSize: 10 }}
+                        axisLine={{ stroke: activeTheme.borderSubtle }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fill: activeTheme.textMuted, fontSize: 10 }}
+                        axisLine={{ stroke: activeTheme.borderSubtle }}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: activeTheme.bgElevated,
+                          border: `1px solid ${activeTheme.borderStrong}`,
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          color: activeTheme.textPrimary,
+                        }}
+                        labelFormatter={(_, payload) => payload?.[0]?.payload?.fullDate || ''}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="created"
+                        name="Created"
+                        stroke={activeTheme.accent}
+                        strokeWidth={1.75}
+                        fill="url(#createdGrad)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="completed"
+                        name="Completed"
+                        stroke="#22c55e"
+                        strokeWidth={2}
+                        fill="url(#completedGrad)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Project Distribution */}
+            <div className="p-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-[var(--text-primary)]">
+                  Project Distribution
+                </span>
+                <div className="flex items-center gap-3 text-[10px] text-[var(--text-secondary)]">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-[2px]" style={{ backgroundColor: activeTheme.accent }} />
+                    Open
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-[2px] bg-[#22c55e]" />
+                    Done
+                  </span>
+                </div>
+              </div>
+
+              {projectDistributionData.length === 0 ? (
+                <div className="py-8 text-center text-[11px] text-[var(--text-muted)]">
+                  No tasks available to group by project.
+                </div>
+              ) : (
+                <div className="w-full h-[210px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={projectDistributionData}
+                      margin={{ top: 8, right: 12, left: -18, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke={activeTheme.borderSubtle} vertical={false} />
+                      <XAxis
+                        dataKey="project"
+                        tick={{ fill: activeTheme.textSecondary, fontSize: 10 }}
+                        axisLine={{ stroke: activeTheme.borderSubtle }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fill: activeTheme.textMuted, fontSize: 10 }}
+                        axisLine={{ stroke: activeTheme.borderSubtle }}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        cursor={{ fill: activeTheme.bgHover }}
+                        contentStyle={{
+                          backgroundColor: activeTheme.bgElevated,
+                          border: `1px solid ${activeTheme.borderStrong}`,
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          color: activeTheme.textPrimary,
+                        }}
+                      />
+                      <Bar dataKey="open" name="Open" stackId="a" fill={activeTheme.accent} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="done" name="Done" stackId="a" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings Modal */}
       {settingsModalOpen && (
@@ -1854,8 +2290,63 @@ export default function App() {
             </div>
 
             <div className="flex flex-col gap-2">
+              <div className="px-2.5 py-1.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[10px] text-[var(--text-secondary)] tabular-nums">
+                Ready to back up: {tasks.length} tasks · {filters.length} filter views · theme ({activeTheme.label}), pagination &amp; colors
+              </div>
               <div className="text-[11px] font-medium text-[var(--text-secondary)]">Export Data &amp; Offline App</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const payload = JSON.stringify(
+                      {
+                        version: 2,
+                        exportedAt: new Date().toISOString(),
+                        tasks,
+                        filters,
+                        settings: buildSettingsPayload(),
+                      },
+                      null,
+                      2
+                    );
+                    downloadBlob(
+                      `todotxt_full_backup_${todayISO()}.json`,
+                      payload,
+                      'application/json;charset=utf-8'
+                    );
+                    showToast('Exported full backup (tasks, views & settings)');
+                  }}
+                  className="h-7 px-2.5 text-[11px] font-medium rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)] inline-flex items-center justify-center gap-1.5"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Export Full Backup (.json)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const payload = JSON.stringify(
+                      {
+                        version: 2,
+                        type: 'settings_and_views',
+                        exportedAt: new Date().toISOString(),
+                        filters,
+                        settings: buildSettingsPayload(),
+                      },
+                      null,
+                      2
+                    );
+                    downloadBlob(
+                      `todotxt_settings_views_${todayISO()}.json`,
+                      payload,
+                      'application/json;charset=utf-8'
+                    );
+                    showToast('Exported settings & custom views');
+                  }}
+                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] inline-flex items-center justify-center gap-1.5"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Export Settings &amp; Views (.json)</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -1867,39 +2358,6 @@ export default function App() {
                 >
                   <FileDown className="w-3 h-3" />
                   <span>Export todo.txt</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const payload = JSON.stringify(
-                      {
-                        version: 1,
-                        exportedAt: new Date().toISOString(),
-                        tasks,
-                        filters,
-                        sortBy,
-                        pageSize,
-                        theme,
-                        boldPriorityA,
-                        colorizeCheckboxes,
-                        priorityColors,
-                        colorizeText,
-                        priorityTextColors,
-                      },
-                      null,
-                      2
-                    );
-                    downloadBlob(
-                      `todotxt_backup_${todayISO()}.json`,
-                      payload,
-                      'application/json;charset=utf-8'
-                    );
-                    showToast('Exported full JSON backup');
-                  }}
-                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] inline-flex items-center justify-center gap-1.5"
-                >
-                  <Download className="w-3 h-3" />
-                  <span>Export Full JSON</span>
                 </button>
                 <button
                   type="button"
@@ -1917,16 +2375,16 @@ export default function App() {
                 >
                   Copy todo.txt
                 </button>
-                <button
-                  type="button"
-                  onClick={handleDownloadStandaloneHtml}
-                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] hover:brightness-110"
-                >
-                  Download Offline TODOTXT.html
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={handleDownloadStandaloneHtml}
+                className="h-7 px-2.5 text-[11px] rounded border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] hover:brightness-110"
+              >
+                Download Offline TODOTXT.html
+              </button>
               <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-                <code className="text-[var(--text-secondary)]">todo.txt</code> exports standard plain-text lines. Full JSON includes tasks, custom filter buttons, and settings. You can also download the standalone zero-dependency <code className="text-[var(--text-secondary)]">TODOTXT.html</code> file for completely offline use.
+                <strong className="text-[var(--text-secondary)]">Full Backup (.json)</strong> saves all tasks, custom filter views, theme, pagination, and priority colors. <strong className="text-[var(--text-secondary)]">Settings &amp; Views (.json)</strong> exports only your custom views and settings.
               </p>
             </div>
 
@@ -1956,15 +2414,25 @@ export default function App() {
                   aria-label="Import mode"
                   className="h-6 px-2 text-[10px] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded text-[var(--text-secondary)]"
                 >
-                  <option value="merge">Mode: Merge unique</option>
-                  <option value="replace">Mode: Replace all</option>
+                  <option value="merge">Tasks: Merge unique</option>
+                  <option value="replace">Tasks: Replace all</option>
                 </select>
               </div>
+
+              <label className="flex items-center gap-1.5 text-[10px] text-[var(--text-secondary)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={restoreSettingsOnImport}
+                  onChange={(e) => setRestoreSettingsOnImport(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-[var(--accent)]"
+                />
+                <span>Restore settings &amp; custom filter views when importing a .json backup</span>
+              </label>
 
               <textarea
                 value={pasteImportText}
                 onChange={(e) => setPasteImportText(e.target.value)}
-                placeholder="Or paste raw todo.txt lines here (one task per line)..."
+                placeholder="Or paste raw todo.txt lines or JSON backup here..."
                 className="w-full min-h-[96px] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2 text-[10px] font-mono text-[var(--text-primary)] resize-y focus:outline-none focus:border-[var(--accent)]"
               />
 
@@ -1992,13 +2460,13 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     if (!pasteImportText.trim()) return;
-                    handleImportLines(pasteImportText.split(/\r?\n/), importMode);
+                    handleBackupPayloadImport(pasteImportText);
                     setPasteImportText('');
                     setBackupModalOpen(false);
                   }}
                   className="h-6 px-3 text-[11px] font-medium rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)]"
                 >
-                  Import Pasted Lines
+                  Import Pasted Data
                 </button>
               </div>
             </div>
@@ -2011,7 +2479,7 @@ export default function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-3.5 right-3.5 z-[100] bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-md px-2.5 py-1.5 text-[11px] text-[var(--text-primary)] flex items-center gap-2.5 shadow-xl"
+          className="fixed bottom-12 right-3.5 z-[100] bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-md px-2.5 py-1.5 text-[11px] text-[var(--text-primary)] flex items-center gap-2.5 shadow-xl"
         >
           <span>{toast.message}</span>
           {toast.canUndo && (

@@ -71,7 +71,7 @@
       min-height: 100%;
       display: flex;
       flex-direction: column;
-      padding: 10px 12px 24px;
+      padding: 10px 12px 16px;
       gap: 8px;
     }
 
@@ -177,19 +177,7 @@
       padding: 0;
     }
 
-    /* Controls Bar: Add + Search */
-    .controls-grid {
-      display: grid;
-      grid-template-columns: 1fr 240px;
-      gap: 6px;
-    }
-
-    @media (max-width: 680px) {
-      .controls-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
+    /* Search & Bottom Add Bar */
     .input-wrap {
       position: relative;
       display: flex;
@@ -426,16 +414,24 @@
       font-weight: 700;
     }
 
-    .task-content {
+    .task-main {
       flex: 1;
       min-width: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 3px 6px;
+      padding: 2px 0;
+      cursor: text;
+    }
+
+    .task-content {
       font-size: 10px;
       line-height: 1.35;
       letter-spacing: 0.01em;
       color: var(--text-primary);
       cursor: text;
       word-break: break-word;
-      padding: 2px 0;
       text-align: left;
     }
 
@@ -446,6 +442,98 @@
     .task-row.completed .task-content {
       color: var(--text-muted) !important;
       text-decoration: line-through;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+    }
+
+    .tag-pill.tag-project {
+      background-color: rgba(14, 165, 233, 0.12);
+      border-color: rgba(14, 165, 233, 0.32);
+      color: #7dd3fc;
+    }
+
+    .tag-pill.tag-project:hover {
+      background-color: rgba(14, 165, 233, 0.25);
+      border-color: rgba(56, 189, 248, 0.6);
+    }
+
+    .tag-pill.tag-project.active {
+      background-color: rgba(14, 165, 233, 0.32);
+      border-color: #38bdf8;
+      color: #e0f2fe;
+      font-weight: 600;
+    }
+
+    .tag-pill.tag-context {
+      background-color: rgba(139, 92, 246, 0.12);
+      border-color: rgba(139, 92, 246, 0.32);
+      color: #c4b5fd;
+    }
+
+    .tag-pill.tag-context:hover {
+      background-color: rgba(139, 92, 246, 0.25);
+      border-color: rgba(167, 139, 250, 0.6);
+    }
+
+    .tag-pill.tag-context.active {
+      background-color: rgba(139, 92, 246, 0.32);
+      border-color: #a78bfa;
+      color: #ede9fe;
+      font-weight: 600;
+    }
+
+    .task-row.completed .tag-pill:not(.active) {
+      opacity: 0.6;
+    }
+
+    .task-row.completed .tag-pill:hover {
+      opacity: 1;
+    }
+
+    .active-tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: background-color 0.12s ease;
+    }
+
+    .active-tag-chip.project {
+      background-color: rgba(14, 165, 233, 0.2);
+      border-color: rgba(56, 189, 248, 0.6);
+      color: #bae6fd;
+    }
+
+    .active-tag-chip.project:hover {
+      background-color: rgba(14, 165, 233, 0.3);
+    }
+
+    .active-tag-chip.context {
+      background-color: rgba(139, 92, 246, 0.2);
+      border-color: rgba(167, 139, 250, 0.6);
+      color: #ddd6fe;
+    }
+
+    .active-tag-chip.context:hover {
+      background-color: rgba(139, 92, 246, 0.3);
     }
 
     .task-edit-wrap {
@@ -636,6 +724,14 @@
       white-space: nowrap;
     }
 
+    /* Bottom Add Bar */
+    .bottom-add-bar {
+      position: sticky;
+      bottom: 8px;
+      z-index: 10;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    }
+
     /* Modals */
     .modal-backdrop {
       position: fixed;
@@ -654,7 +750,7 @@
 
     .modal {
       width: 100%;
-      max-width: 540px;
+      max-width: 560px;
       max-height: 88vh;
       overflow-y: auto;
       background-color: var(--bg-surface);
@@ -664,6 +760,10 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+    }
+
+    .modal-wide {
+      max-width: 760px;
     }
 
     .modal-header {
@@ -924,7 +1024,7 @@
 
     .backup-actions-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 6px;
     }
 
@@ -932,6 +1032,86 @@
       .backup-actions-grid {
         grid-template-columns: 1fr;
       }
+    }
+
+    .backup-summary-bar {
+      padding: 6px 9px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Analytics Charts */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 520px) {
+      .stats-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-box {
+      padding: 8px 10px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 15px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+      margin-top: 2px;
+    }
+
+    .chart-card {
+      padding: 10px 12px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chart-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      margin-right: 4px;
     }
 
     .divider {
@@ -942,7 +1122,7 @@
     /* Toast Notification */
     .toast {
       position: fixed;
-      bottom: 14px;
+      bottom: 48px;
       right: 14px;
       background-color: var(--bg-elevated);
       border: 1px solid var(--border-strong);
@@ -985,43 +1165,31 @@
         <span class="task-summary" id="taskSummary">0 tasks</span>
       </div>
       <div class="topbar-actions">
+        <button type="button" class="btn btn-sm" id="openAnalyticsBtn" title="View task completion trends and project distribution">Analytics</button>
         <button type="button" class="btn btn-sm" id="openFiltersBtn" title="Customize filter buttons">Customize Filters</button>
         <button type="button" class="btn btn-sm" id="openSettingsBtn" title="Theme, pagination, and priority color settings">Settings</button>
         <button type="button" class="btn btn-sm" id="openBackupBtn" title="Export or restore local backup">Backup &amp; Restore</button>
       </div>
     </header>
 
-    <!-- Add & Search Inputs -->
-    <div class="controls-grid">
-      <form class="input-wrap" id="addForm">
-        <input
-          type="text"
-          id="addInput"
-          class="text-input"
-          placeholder="Add task in todo.txt format (e.g. (A) Buy milk +Home @errands due:2026-11-25)"
-          autocomplete="off"
-          aria-label="New task in todo.txt format"
-        />
-        <button type="submit" class="input-action-btn">Add</button>
-      </form>
-
-      <div class="input-wrap">
-        <input
-          type="text"
-          id="searchInput"
-          class="text-input"
-          placeholder="Search tasks, +project, @context... (/)"
-          autocomplete="off"
-          aria-label="Search tasks"
-        />
-        <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search">&times;</button>
-      </div>
+    <!-- Search Input (Top) -->
+    <div class="input-wrap">
+      <input
+        type="text"
+        id="searchInput"
+        class="text-input"
+        placeholder="Search tasks, +project, @context... (/)"
+        autocomplete="off"
+        aria-label="Search tasks"
+      />
+      <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search">&times;</button>
     </div>
 
     <!-- Filter Buttons & Sort -->
     <div class="filter-toolbar">
       <div class="filter-buttons-scroll" id="filterButtonsContainer" role="tablist" aria-label="Task filters"></div>
       <div class="filter-tools">
+        <button type="button" id="activeTagChip" class="active-tag-chip" style="display:none;"></button>
         <select id="sortSelect" class="select-compact" aria-label="Sort tasks">
           <option value="priority">Sort: Priority</option>
           <option value="added">Sort: Order</option>
@@ -1042,6 +1210,53 @@
       </div>
       <nav class="pagination-bar" id="paginationBar" aria-label="Task pages" style="display: none;"></nav>
     </main>
+
+    <!-- Add Task Input (Bottom Only) -->
+    <form class="input-wrap bottom-add-bar" id="addForm">
+      <input
+        type="text"
+        id="addInput"
+        class="text-input"
+        placeholder="Add task in todo.txt format (e.g. (A) Buy milk +Home @errands due:2026-11-25) [n]"
+        autocomplete="off"
+        aria-label="New task in todo.txt format"
+      />
+      <button type="submit" class="input-action-btn">Add</button>
+    </form>
+  </div>
+
+  <!-- Analytics Modal -->
+  <div class="modal-backdrop" id="analyticsModal" role="dialog" aria-modal="true" aria-labelledby="analyticsModalTitle">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title" id="analyticsModalTitle">Task Analytics</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeAnalyticsBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="stats-strip" id="analyticsSummaryStrip"></div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>Completion Trends Over Time</span>
+          <span class="chart-legend">
+            <span><span class="legend-dot" style="background: var(--success);"></span>Completed</span>
+            <span><span class="legend-dot" style="background: var(--accent);"></span>Created</span>
+          </span>
+        </div>
+        <div id="trendChartContainer"></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>Project Distribution</span>
+          <span class="chart-legend">
+            <span><span class="legend-dot" style="background: var(--accent);"></span>Open</span>
+            <span><span class="legend-dot" style="background: var(--success);"></span>Done</span>
+          </span>
+        </div>
+        <div id="projectChartContainer"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Settings Modal -->
@@ -1052,7 +1267,6 @@
         <button type="button" class="btn btn-sm btn-icon" id="closeSettingsBtn" aria-label="Close">&times;</button>
       </div>
 
-      <!-- Theme Section -->
       <div class="modal-section">
         <div class="modal-label">Theme</div>
         <div class="theme-grid" id="themeGrid"></div>
@@ -1060,7 +1274,6 @@
 
       <div class="divider"></div>
 
-      <!-- Pagination Section -->
       <div class="modal-section">
         <div class="modal-label">Pagination</div>
         <div class="setting-row">
@@ -1081,7 +1294,6 @@
 
       <div class="divider"></div>
 
-      <!-- Checkbox Priority Colors -->
       <div class="modal-section">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <span class="modal-label">Checkbox Priority Colors (A–F)</span>
@@ -1101,7 +1313,6 @@
 
       <div class="divider"></div>
 
-      <!-- Priority Font Colors (A-F) -->
       <div class="modal-section">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <span class="modal-label">Priority Font Colors (A–F)</span>
@@ -1183,14 +1394,16 @@
       </div>
 
       <div class="modal-section">
+        <div class="backup-summary-bar" id="backupSummaryBar"></div>
         <div class="modal-label">Export Data</div>
         <div class="backup-actions-grid">
+          <button type="button" class="btn btn-sm btn-primary" id="exportJsonBtn">Export Full Backup (.json)</button>
+          <button type="button" class="btn btn-sm" id="exportSettingsJsonBtn">Export Settings &amp; Views (.json)</button>
           <button type="button" class="btn btn-sm" id="exportTxtBtn">Export todo.txt</button>
-          <button type="button" class="btn btn-sm" id="exportJsonBtn">Export Full JSON</button>
           <button type="button" class="btn btn-sm" id="copyRawBtn">Copy todo.txt</button>
         </div>
         <p class="modal-help">
-          <code>todo.txt</code> exports standard plain-text lines compatible with any todo.txt app. Full JSON includes tasks, custom filter buttons, and settings.
+          <strong>Full Backup (.json)</strong> saves all tasks, custom filter views, theme, pagination, and priority colors. <strong>Settings &amp; Views (.json)</strong> saves only your custom views and settings.
         </p>
       </div>
 
@@ -1198,18 +1411,22 @@
 
       <div class="modal-section">
         <div class="modal-label">Restore / Import</div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
           <button type="button" class="btn btn-sm" id="pickFileBtn">Import .txt or .json File</button>
           <input type="file" id="importFileInput" class="hidden-file-input" accept=".txt,.json,text/plain,application/json" />
           <select id="importModeSelect" class="select-compact" aria-label="Import mode">
-            <option value="merge">Mode: Merge unique</option>
-            <option value="replace">Mode: Replace all</option>
+            <option value="merge">Tasks: Merge unique</option>
+            <option value="replace">Tasks: Replace all</option>
           </select>
         </div>
-        <textarea id="pasteImportTextarea" class="field-textarea" placeholder="Or paste raw todo.txt lines here (one task per line)..."></textarea>
+        <label style="display:flex; align-items:center; gap:6px; font-size:10px; color:var(--text-secondary); cursor:pointer;">
+          <input type="checkbox" id="restoreSettingsOnImport" checked style="width:14px; height:14px; accent-color:var(--accent);" />
+          <span>Restore settings &amp; custom filter views when importing a .json backup</span>
+        </label>
+        <textarea id="pasteImportTextarea" class="field-textarea" placeholder="Or paste raw todo.txt lines or JSON backup here..."></textarea>
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
           <button type="button" class="btn btn-sm btn-danger" id="clearCompletedBtn">Purge Completed</button>
-          <button type="button" class="btn btn-sm btn-primary" id="applyPasteImportBtn">Import Pasted Lines</button>
+          <button type="button" class="btn btn-sm btn-primary" id="applyPasteImportBtn">Import Pasted Data</button>
         </div>
       </div>
     </div>
@@ -1371,8 +1588,10 @@
         '(D) 2026-11-18 Backup photo library to external drive +Maintenance @home',
         '(E) 2026-11-18 Organize digital receipts folder +Finance @computer',
         '(F) 2026-11-17 Read backup verification checklist +Ops @reading',
-        '2026-11-17 Water indoor plants +Home @errands',
-        'x 2026-11-22 2026-11-15 Sync local storage export test +Work @laptop'
+        'x 2026-11-24 2026-11-21 Ship offline backup validator +Work @laptop',
+        'x 2026-11-23 2026-11-19 Pay monthly utility bills +Finance @computer',
+        'x 2026-11-22 2026-11-15 Sync local storage export test +Work @laptop',
+        'x 2026-11-20 2026-11-17 Clean inbox and archive receipts +Home @computer'
       ];
 
       var state = {
@@ -1380,6 +1599,7 @@
         filters: [],
         activeFilterId: 'f_all',
         searchQuery: '',
+        selectedTag: null,
         sortBy: 'priority',
         pageSize: 10,
         currentPage: 1,
@@ -1465,9 +1685,15 @@
         for (var i = 0; i < tokens.length; i++) {
           var tok = tokens[i];
           if (/^\+\S+/.test(tok)) {
-            projects.push(tok.slice(1));
+            var pVal = tok.slice(1);
+            if (!projects.some(function (ex) { return ex.toLowerCase() === pVal.toLowerCase(); })) {
+              projects.push(pVal);
+            }
           } else if (/^@\S+/.test(tok)) {
-            contexts.push(tok.slice(1));
+            var cVal = tok.slice(1);
+            if (!contexts.some(function (ex) { return ex.toLowerCase() === cVal.toLowerCase(); })) {
+              contexts.push(cVal);
+            }
           } else if (/^[a-zA-Z][a-zA-Z0-9_-]*:[^\s]+$/.test(tok) && !/^https?:\/\//i.test(tok)) {
             var colonIdx = tok.indexOf(':');
             var k = tok.slice(0, colonIdx).toLowerCase();
@@ -1478,8 +1704,10 @@
           }
         }
 
-        var content = contentParts.join(' ').trim();
-        if (!content) {
+        var content = '';
+        if (contentParts.length > 0) {
+          content = contentParts.join(' ').trim();
+        } else if (projects.length === 0 && contexts.length === 0) {
           content = remaining || text;
         }
 
@@ -1620,21 +1848,46 @@
         return migrated;
       }
 
+      function buildSettingsSnapshot() {
+        return {
+          activeFilterId: state.activeFilterId,
+          sortBy: state.sortBy,
+          pageSize: state.pageSize,
+          theme: state.theme,
+          boldPriorityA: state.boldPriorityA,
+          colorizeCheckboxes: state.colorizeCheckboxes,
+          priorityColors: state.priorityColors,
+          colorizeText: state.colorizeText,
+          priorityTextColors: state.priorityTextColors
+        };
+      }
+
+      function applyImportedConfig(obj) {
+        if (Array.isArray(obj.filters) && obj.filters.length > 0) {
+          state.filters = migrateFiltersIfNeeded(obj.filters);
+        }
+        var s = obj.settings || obj;
+        if (s.activeFilterId) state.activeFilterId = s.activeFilterId;
+        if (s.sortBy) state.sortBy = s.sortBy;
+        if (typeof s.pageSize === 'number' && s.pageSize >= 1) {
+          state.pageSize = Math.min(500, Math.floor(s.pageSize));
+        }
+        if (s.theme && THEMES[s.theme]) {
+          state.theme = s.theme;
+          applyTheme(s.theme);
+        }
+        if (typeof s.boldPriorityA === 'boolean') state.boldPriorityA = s.boldPriorityA;
+        if (typeof s.colorizeCheckboxes === 'boolean') state.colorizeCheckboxes = s.colorizeCheckboxes;
+        if (s.priorityColors) state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS, s.priorityColors);
+        if (typeof s.colorizeText === 'boolean') state.colorizeText = s.colorizeText;
+        if (s.priorityTextColors) state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS, s.priorityTextColors);
+      }
+
       function saveState() {
         try {
           localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
           localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(state.filters));
-          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
-            activeFilterId: state.activeFilterId,
-            sortBy: state.sortBy,
-            pageSize: state.pageSize,
-            theme: state.theme,
-            boldPriorityA: state.boldPriorityA,
-            colorizeCheckboxes: state.colorizeCheckboxes,
-            priorityColors: state.priorityColors,
-            colorizeText: state.colorizeText,
-            priorityTextColors: state.priorityTextColors
-          }));
+          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(buildSettingsSnapshot()));
           localStorage.setItem(STORAGE_KEYS.INIT, '1');
         } catch (err) {
           showToast('Storage warning: could not persist locally.');
@@ -1665,22 +1918,7 @@
           }
 
           if (rawSettings) {
-            var s = JSON.parse(rawSettings);
-            if (s.activeFilterId) state.activeFilterId = s.activeFilterId;
-            if (s.sortBy) state.sortBy = s.sortBy;
-            if (typeof s.pageSize === 'number' && s.pageSize >= 1) {
-              state.pageSize = Math.min(500, Math.floor(s.pageSize));
-            }
-            if (s.theme && THEMES[s.theme]) state.theme = s.theme;
-            if (typeof s.boldPriorityA === 'boolean') state.boldPriorityA = s.boldPriorityA;
-            if (typeof s.colorizeCheckboxes === 'boolean') state.colorizeCheckboxes = s.colorizeCheckboxes;
-            if (s.priorityColors && typeof s.priorityColors === 'object') {
-              state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS, s.priorityColors);
-            }
-            if (typeof s.colorizeText === 'boolean') state.colorizeText = s.colorizeText;
-            if (s.priorityTextColors && typeof s.priorityTextColors === 'object') {
-              state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS, s.priorityTextColors);
-            }
+            applyImportedConfig({ settings: JSON.parse(rawSettings) });
           }
 
           if (rawFilters) {
@@ -1703,12 +1941,22 @@
         var activeFilter = state.filters.find(function (f) { return f.id === state.activeFilterId; });
         var filterQuery = activeFilter ? activeFilter.query : '';
         var search = state.searchQuery.trim().toLowerCase();
+        var tagLower = state.selectedTag ? state.selectedTag.toLowerCase() : null;
 
         var enriched = [];
         for (var i = 0; i < state.tasks.length; i++) {
           var task = state.tasks[i];
           var parsed = parseTodoLine(task.raw);
           if (!matchesQuery(parsed, filterQuery)) continue;
+          if (tagLower) {
+            if (tagLower.charAt(0) === '+') {
+              var targetProj = tagLower.slice(1);
+              if (!parsed.projects.some(function (p) { return p.toLowerCase() === targetProj; })) continue;
+            } else if (tagLower.charAt(0) === '@') {
+              var targetCtx = tagLower.slice(1);
+              if (!parsed.contexts.some(function (c) { return c.toLowerCase() === targetCtx; })) continue;
+            }
+          }
           if (search && parsed.raw.toLowerCase().indexOf(search) === -1) continue;
           enriched.push({ task: task, parsed: parsed, index: i });
         }
@@ -1724,7 +1972,9 @@
             return a.index - b.index;
           }
           if (state.sortBy === 'alpha') {
-            return a.parsed.content.localeCompare(b.parsed.content);
+            var ta = a.parsed.content || a.parsed.raw;
+            var tb = b.parsed.content || b.parsed.raw;
+            return ta.localeCompare(tb);
           }
           if (state.sortBy === 'due') {
             if (a.parsed.completed !== b.parsed.completed) {
@@ -1910,7 +2160,7 @@
         if (items.length === 0) {
           emptyEl.style.display = 'block';
           document.getElementById('emptyMessage').textContent = total === 0
-            ? 'No tasks yet. Add one above in todo.txt format.'
+            ? 'No tasks yet. Add one below in todo.txt format.'
             : 'No tasks match this filter or search.';
           renderPagination(0, 1);
           return;
@@ -2098,21 +2348,65 @@
               editInput.setSelectionRange(editInput.value.length, editInput.value.length);
             }, 0);
           } else {
-            var contentBtn = document.createElement('button');
-            contentBtn.type = 'button';
-            var isBoldA = state.boldPriorityA && parsed.priority === 'A';
-            contentBtn.className = 'task-content' + (isBoldA ? ' priority-a' : '');
-            contentBtn.textContent = parsed.content;
-            contentBtn.title = 'Click to edit task';
-            var textColor = getTextColorForTask(parsed);
-            if (textColor) {
-              contentBtn.style.color = textColor;
-            }
-            contentBtn.addEventListener('click', function () {
+            var mainWrap = document.createElement('div');
+            mainWrap.className = 'task-main';
+            mainWrap.title = 'Click to edit task';
+            mainWrap.addEventListener('click', function () {
               state.editingTaskId = task.id;
               renderTasks();
             });
-            li.appendChild(contentBtn);
+
+            if (parsed.content) {
+              var contentBtn = document.createElement('button');
+              contentBtn.type = 'button';
+              var isBoldA = state.boldPriorityA && parsed.priority === 'A';
+              contentBtn.className = 'task-content' + (isBoldA ? ' priority-a' : '');
+              contentBtn.textContent = parsed.content;
+              var textColor = getTextColorForTask(parsed);
+              if (textColor) {
+                contentBtn.style.color = textColor;
+              }
+              contentBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                state.editingTaskId = task.id;
+                renderTasks();
+              });
+              mainWrap.appendChild(contentBtn);
+            }
+
+            parsed.projects.forEach(function (proj) {
+              var tag = '+' + proj;
+              var isTagActive = Boolean(state.selectedTag && state.selectedTag.toLowerCase() === tag.toLowerCase());
+              var pill = document.createElement('button');
+              pill.type = 'button';
+              pill.className = 'tag-pill tag-project' + (isTagActive ? ' active' : '');
+              pill.textContent = tag;
+              pill.setAttribute('aria-pressed', isTagActive ? 'true' : 'false');
+              pill.title = isTagActive ? 'Clear ' + tag + ' filter' : 'Filter by ' + tag;
+              pill.addEventListener('click', function (e) {
+                e.stopPropagation();
+                handleTagClick(tag);
+              });
+              mainWrap.appendChild(pill);
+            });
+
+            parsed.contexts.forEach(function (ctx) {
+              var tag = '@' + ctx;
+              var isTagActive = Boolean(state.selectedTag && state.selectedTag.toLowerCase() === tag.toLowerCase());
+              var pill = document.createElement('button');
+              pill.type = 'button';
+              pill.className = 'tag-pill tag-context' + (isTagActive ? ' active' : '');
+              pill.textContent = tag;
+              pill.setAttribute('aria-pressed', isTagActive ? 'true' : 'false');
+              pill.title = isTagActive ? 'Clear ' + tag + ' filter' : 'Filter by ' + tag;
+              pill.addEventListener('click', function (e) {
+                e.stopPropagation();
+                handleTagClick(tag);
+              });
+              mainWrap.appendChild(pill);
+            });
+
+            li.appendChild(mainWrap);
           }
 
           var removeBtn = document.createElement('button');
@@ -2159,6 +2453,126 @@
           toast.classList.remove('visible');
           state.undoSnapshot = null;
         }, 4000);
+      }
+
+      function renderAnalyticsModal() {
+        var parsedList = state.tasks.map(function (t) { return parseTodoLine(t.raw); });
+        var total = parsedList.length;
+        var doneCount = parsedList.filter(function (p) { return p.completed; }).length;
+        var openCount = total - doneCount;
+        var rate = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+        var strip = document.getElementById('analyticsSummaryStrip');
+        strip.innerHTML =
+          '<div class="stat-box"><div class="stat-label">Total Tasks</div><div class="stat-value">' + total + '</div></div>' +
+          '<div class="stat-box"><div class="stat-label">Open</div><div class="stat-value">' + openCount + '</div></div>' +
+          '<div class="stat-box"><div class="stat-label">Completed</div><div class="stat-value">' + doneCount + '</div></div>' +
+          '<div class="stat-box"><div class="stat-label">Completion Rate</div><div class="stat-value">' + rate + '%</div></div>';
+
+        // Completion Trends by Date
+        var dateMap = {};
+        parsedList.forEach(function (p) {
+          if (p.creationDate) {
+            if (!dateMap[p.creationDate]) dateMap[p.creationDate] = { created: 0, completed: 0 };
+            dateMap[p.creationDate].created++;
+          }
+          if (p.completed && p.completionDate) {
+            if (!dateMap[p.completionDate]) dateMap[p.completionDate] = { created: 0, completed: 0 };
+            dateMap[p.completionDate].completed++;
+          }
+        });
+
+        var dates = Object.keys(dateMap).sort();
+        var trendEl = document.getElementById('trendChartContainer');
+        if (dates.length === 0) {
+          trendEl.innerHTML = '<div class="modal-help">Add YYYY-MM-DD creation or completion dates to tasks to visualize trends over time.</div>';
+        } else {
+          var w = 680;
+          var h = 170;
+          var padL = 28;
+          var padR = 14;
+          var padT = 12;
+          var padB = 26;
+          var plotW = w - padL - padR;
+          var plotH = h - padT - padB;
+          var maxVal = 1;
+          dates.forEach(function (d) {
+            maxVal = Math.max(maxVal, dateMap[d].created, dateMap[d].completed);
+          });
+
+          var groupW = plotW / dates.length;
+          var barW = Math.max(4, Math.min(18, groupW * 0.34));
+          var svgParts = ['<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="170" style="display:block;">'];
+
+          for (var g = 0; g <= 2; g++) {
+            var gy = padT + (plotH * g) / 2;
+            var gLabel = Math.round(maxVal * (1 - g / 2));
+            svgParts.push('<line x1="' + padL + '" y1="' + gy + '" x2="' + (w - padR) + '" y2="' + gy + '" stroke="var(--border-subtle)" stroke-dasharray="3 3"/>');
+            svgParts.push('<text x="' + (padL - 5) + '" y="' + (gy + 3) + '" text-anchor="end" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">' + gLabel + '</text>');
+          }
+
+          dates.forEach(function (d, idx) {
+            var cx = padL + idx * groupW + groupW / 2;
+            var createdH = (dateMap[d].created / maxVal) * plotH;
+            var completedH = (dateMap[d].completed / maxVal) * plotH;
+
+            svgParts.push('<rect x="' + (cx - barW - 1) + '" y="' + (padT + plotH - createdH) + '" width="' + barW + '" height="' + createdH + '" rx="2" fill="var(--accent)"><title>' + d + ' Created: ' + dateMap[d].created + '</title></rect>');
+            svgParts.push('<rect x="' + (cx + 1) + '" y="' + (padT + plotH - completedH) + '" width="' + barW + '" height="' + completedH + '" rx="2" fill="var(--success)"><title>' + d + ' Completed: ' + dateMap[d].completed + '</title></rect>');
+
+            if (dates.length <= 10 || idx % Math.ceil(dates.length / 8) === 0 || idx === dates.length - 1) {
+              svgParts.push('<text x="' + cx + '" y="' + (h - 6) + '" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">' + d.slice(5) + '</text>');
+            }
+          });
+
+          svgParts.push('</svg>');
+          trendEl.innerHTML = svgParts.join('');
+        }
+
+        // Project Distribution
+        var projMap = {};
+        parsedList.forEach(function (p) {
+          var keys = p.projects.length > 0 ? p.projects : ['No Project'];
+          keys.forEach(function (proj) {
+            if (!projMap[proj]) projMap[proj] = { open: 0, done: 0 };
+            if (p.completed) projMap[proj].done++;
+            else projMap[proj].open++;
+          });
+        });
+
+        var projList = Object.keys(projMap)
+          .map(function (name) {
+            return {
+              name: name,
+              open: projMap[name].open,
+              done: projMap[name].done,
+              total: projMap[name].open + projMap[name].done
+            };
+          })
+          .sort(function (a, b) { return b.total - a.total; })
+          .slice(0, 10);
+
+        var projEl = document.getElementById('projectChartContainer');
+        if (projList.length === 0) {
+          projEl.innerHTML = '<div class="modal-help">No tasks available to group by project.</div>';
+        } else {
+          var maxProj = Math.max.apply(null, projList.map(function (p) { return p.total; })) || 1;
+          var rowsHtml = projList.map(function (p) {
+            var openPct = (p.open / maxProj) * 100;
+            var donePct = (p.done / maxProj) * 100;
+            var label = p.name === 'No Project' ? '(No Project)' : '+' + p.name;
+            return (
+              '<div style="display:grid; grid-template-columns:110px 1fr 48px; align-items:center; gap:8px; margin-bottom:6px; font-size:10px;">' +
+                '<span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + label + '</span>' +
+                '<div style="height:10px; background:var(--bg-surface); border-radius:3px; overflow:hidden; display:flex;">' +
+                  '<div style="width:' + openPct + '%; background:var(--accent);" title="Open: ' + p.open + '"></div>' +
+                  '<div style="width:' + donePct + '%; background:var(--success);" title="Done: ' + p.done + '"></div>' +
+                '</div>' +
+                '<span style="text-align:right; color:var(--text-muted); font-variant-numeric:tabular-nums;">' + p.open + '/' + p.total + '</span>' +
+              '</div>'
+            );
+          }).join('');
+          projEl.innerHTML = rowsHtml;
+        }
       }
 
       function renderThemeGrid() {
@@ -2403,8 +2817,83 @@
         showToast('Imported ' + clean.length + ' task(s).');
       }
 
+      function handleBackupPayloadImport(text, mode, restoreSettings) {
+        var trimmed = String(text || '').trim();
+        if (!trimmed) return false;
+
+        if (trimmed.charAt(0) === '{') {
+          try {
+            var obj = JSON.parse(trimmed);
+            var restoredSettings = false;
+            if (restoreSettings && (obj.filters || obj.settings || obj.theme || obj.pageSize || obj.priorityColors || obj.priorityTextColors)) {
+              applyImportedConfig(obj);
+              restoredSettings = true;
+            }
+            if (Array.isArray(obj.tasks) && obj.tasks.length > 0) {
+              var lines = obj.tasks.map(function (t) { return typeof t === 'string' ? t : t.raw; });
+              importLines(lines, mode);
+              if (restoredSettings) {
+                showToast('Restored tasks, custom views, and settings');
+              }
+              return true;
+            }
+            if (restoredSettings) {
+              saveState();
+              render();
+              showToast('Restored settings and custom filter views');
+              return true;
+            }
+          } catch (err) {
+            // fallback to plain todo.txt lines
+          }
+        }
+
+        importLines(trimmed.split(/\r?\n/), mode);
+        return true;
+      }
+
+      function updateBackupSummary() {
+        var bar = document.getElementById('backupSummaryBar');
+        if (!bar) return;
+        bar.textContent = 'Ready to back up: ' + state.tasks.length + ' tasks · ' + state.filters.length + ' filter views · theme (' + (THEMES[state.theme] ? THEMES[state.theme].label : state.theme) + '), pagination & colors';
+      }
+
+      function renderActiveTagChip() {
+        var chip = document.getElementById('activeTagChip');
+        if (!chip) return;
+        if (!state.selectedTag) {
+          chip.style.display = 'none';
+          chip.innerHTML = '';
+          return;
+        }
+        var isProj = state.selectedTag.charAt(0) === '+';
+        chip.className = 'active-tag-chip ' + (isProj ? 'project' : 'context');
+        chip.title = 'Clear ' + state.selectedTag + ' filter';
+        chip.innerHTML = '';
+        var lbl = document.createElement('span');
+        lbl.textContent = state.selectedTag;
+        var closeSpan = document.createElement('span');
+        closeSpan.innerHTML = '&times;';
+        chip.appendChild(lbl);
+        chip.appendChild(closeSpan);
+        chip.style.display = 'inline-flex';
+      }
+
+      function handleTagClick(tag) {
+        if (state.selectedTag && state.selectedTag.toLowerCase() === tag.toLowerCase()) {
+          state.selectedTag = null;
+        } else {
+          state.selectedTag = tag;
+        }
+        state.currentPage = 1;
+        state.editingTaskId = null;
+        renderActiveTagChip();
+        renderTasks();
+      }
+
       function render() {
         document.getElementById('sortSelect').value = state.sortBy;
+        renderActiveTagChip();
         renderFilterButtons();
         renderTasks();
       }
@@ -2441,6 +2930,13 @@
           searchInput.focus();
         });
 
+        document.getElementById('activeTagChip').addEventListener('click', function () {
+          state.selectedTag = null;
+          state.currentPage = 1;
+          renderActiveTagChip();
+          renderTasks();
+        });
+
         document.getElementById('sortSelect').addEventListener('change', function (e) {
           state.sortBy = e.target.value;
           state.currentPage = 1;
@@ -2450,6 +2946,7 @@
 
         document.getElementById('resetFilterBtn').addEventListener('click', function () {
           state.searchQuery = '';
+          state.selectedTag = null;
           state.currentPage = 1;
           searchInput.value = '';
           clearSearchBtn.classList.remove('visible');
@@ -2469,6 +2966,19 @@
             render();
             document.getElementById('toast').classList.remove('visible');
           }
+        });
+
+        // Analytics Modal
+        var analyticsModal = document.getElementById('analyticsModal');
+        document.getElementById('openAnalyticsBtn').addEventListener('click', function () {
+          renderAnalyticsModal();
+          analyticsModal.classList.add('open');
+        });
+        document.getElementById('closeAnalyticsBtn').addEventListener('click', function () {
+          analyticsModal.classList.remove('open');
+        });
+        analyticsModal.addEventListener('click', function (e) {
+          if (e.target === analyticsModal) analyticsModal.classList.remove('open');
         });
 
         // Settings Modal
@@ -2599,6 +3109,7 @@
         // Backup Modal
         var backupModal = document.getElementById('backupModal');
         document.getElementById('openBackupBtn').addEventListener('click', function () {
+          updateBackupSummary();
           backupModal.classList.add('open');
         });
         document.getElementById('closeBackupBtn').addEventListener('click', function () {
@@ -2616,21 +3127,26 @@
 
         document.getElementById('exportJsonBtn').addEventListener('click', function () {
           var payload = JSON.stringify({
-            version: 1,
+            version: 2,
             exportedAt: new Date().toISOString(),
             tasks: state.tasks,
             filters: state.filters,
-            sortBy: state.sortBy,
-            pageSize: state.pageSize,
-            theme: state.theme,
-            boldPriorityA: state.boldPriorityA,
-            colorizeCheckboxes: state.colorizeCheckboxes,
-            priorityColors: state.priorityColors,
-            colorizeText: state.colorizeText,
-            priorityTextColors: state.priorityTextColors
+            settings: buildSettingsSnapshot()
           }, null, 2);
-          downloadFile('todotxt_backup_' + todayISO() + '.json', payload, 'application/json;charset=utf-8');
-          showToast('Exported full JSON backup');
+          downloadFile('todotxt_full_backup_' + todayISO() + '.json', payload, 'application/json;charset=utf-8');
+          showToast('Exported full backup (tasks, views & settings)');
+        });
+
+        document.getElementById('exportSettingsJsonBtn').addEventListener('click', function () {
+          var payload = JSON.stringify({
+            version: 2,
+            type: 'settings_and_views',
+            exportedAt: new Date().toISOString(),
+            filters: state.filters,
+            settings: buildSettingsSnapshot()
+          }, null, 2);
+          downloadFile('todotxt_settings_views_' + todayISO() + '.json', payload, 'application/json;charset=utf-8');
+          showToast('Exported settings & custom views');
         });
 
         document.getElementById('copyRawBtn').addEventListener('click', function () {
@@ -2656,35 +3172,8 @@
           reader.onload = function (ev) {
             var text = String(ev.target.result || '');
             var mode = document.getElementById('importModeSelect').value;
-
-            if (file.name.toLowerCase().endsWith('.json') || text.trim().startsWith('{')) {
-              try {
-                var obj = JSON.parse(text);
-                if (Array.isArray(obj.tasks)) {
-                  var lines = obj.tasks.map(function (t) { return typeof t === 'string' ? t : t.raw; });
-                  if (mode === 'replace') {
-                    if (Array.isArray(obj.filters) && obj.filters.length > 0) state.filters = migrateFiltersIfNeeded(obj.filters);
-                    if (typeof obj.pageSize === 'number' && obj.pageSize >= 1) state.pageSize = obj.pageSize;
-                    if (obj.theme && THEMES[obj.theme]) {
-                      state.theme = obj.theme;
-                      applyTheme(obj.theme);
-                    }
-                    if (typeof obj.boldPriorityA === 'boolean') state.boldPriorityA = obj.boldPriorityA;
-                    if (typeof obj.colorizeCheckboxes === 'boolean') state.colorizeCheckboxes = obj.colorizeCheckboxes;
-                    if (obj.priorityColors) state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS, obj.priorityColors);
-                    if (typeof obj.colorizeText === 'boolean') state.colorizeText = obj.colorizeText;
-                    if (obj.priorityTextColors) state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS, obj.priorityTextColors);
-                  }
-                  importLines(lines, mode);
-                  backupModal.classList.remove('open');
-                  return;
-                }
-              } catch (err) {
-                // fallback to line import
-              }
-            }
-
-            importLines(text.split(/\r?\n/), mode);
+            var restoreSettings = document.getElementById('restoreSettingsOnImport').checked;
+            handleBackupPayloadImport(text, mode, restoreSettings);
             backupModal.classList.remove('open');
           };
           reader.readAsText(file);
@@ -2696,7 +3185,8 @@
           var text = textarea.value.trim();
           if (!text) return;
           var mode = document.getElementById('importModeSelect').value;
-          importLines(text.split(/\r?\n/), mode);
+          var restoreSettings = document.getElementById('restoreSettingsOnImport').checked;
+          handleBackupPayloadImport(text, mode, restoreSettings);
           textarea.value = '';
           backupModal.classList.remove('open');
         });
@@ -2722,11 +3212,23 @@
           var isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 
           if (e.key === 'Escape') {
+            var hadOverlayOrEdit =
+              analyticsModal.classList.contains('open') ||
+              filtersModal.classList.contains('open') ||
+              settingsModal.classList.contains('open') ||
+              backupModal.classList.contains('open') ||
+              Boolean(state.editingTaskId);
+            analyticsModal.classList.remove('open');
             filtersModal.classList.remove('open');
             settingsModal.classList.remove('open');
             backupModal.classList.remove('open');
             if (state.editingTaskId) {
               state.editingTaskId = null;
+              renderTasks();
+            } else if (!hadOverlayOrEdit && state.selectedTag) {
+              state.selectedTag = null;
+              state.currentPage = 1;
+              renderActiveTagChip();
               renderTasks();
             }
             return;
