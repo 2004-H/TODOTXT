@@ -15,16 +15,21 @@ A clean, minimalist, dark-mode `todo.txt` task manager designed for maximum info
 - **Clean Content-Only Display & `todo.txt` Compatibility**
   - Follows the standard `todo.txt` specification (`x YYYY-MM-DD`, `(A)`–`(Z)` priorities, creation dates, `+projects`, `@contexts`, and `key:value` metadata such as `due:YYYY-MM-DD`).
   - Automatically hides `todo.txt` metadata tokens in the list view so only the readable task content is shown.
-  - Click any task row to edit the complete raw `todo.txt` line inline (`Enter` to save, `Esc` to cancel).
+  - Priority `(A)` tasks render in **bold** by default (configurable in **Settings**).
+  - Click any task row to edit the complete raw `todo.txt` line inline (`Enter` to save, `Esc` to cancel), with quick-select priority buttons `(A)` through `(F)` and `None`.
 
-- **Single-Tap Actions**
+- **Single-Tap Actions & Priority Colors (`A`–`F`)**
   - **Single-tap remove (`×`)** deletes a task immediately, paired with a 4-second **Undo** toast notification.
   - **Single-tap check** toggles completion status (`x YYYY-MM-DD ...`).
+  - **Priority Checkbox & Font Colors**: Customize both checkbox colors and task font colors for priorities `(A)` through `(F)` in **Settings**.
 
-- **Persistent `localStorage` Cache**
-  - Automatically saves tasks, custom filter buttons, active filter selection, and sort order in `localStorage` so everything stays intact across browser sessions.
+- **Dark-Mode Themes, Classic Pagination & `localStorage` Cache**
+  - **Theme Presets**: Switch between **Midnight**, **Slate**, **Zinc**, **Neutral**, **Stone**, and **Forest** dark-mode themes in **Settings**.
+  - **Classic Pagination**: Search-style pagination (`< Prev`, numbered pages, `Next >`) with a customizable **Tasks per page** setting (default `10`).
+  - Automatically persists tasks, filter buttons, sort order, pagination size, theme, and color preferences in `localStorage`.
 
-- **Instant Search & Sorting**
+- **Instant Search, Sorting & P1/P2/P3 Filter Buttons**
+  - Default filter buttons include **All**, **Open**, **P1** (`A–B`), **P2** (`C–D`), **P3** (`E–F`), and **Done**, all customizable via **Customize Filters**.
   - Real-time search across both visible task content and hidden `todo.txt` metadata (`+project`, `@context`, priorities, dates, and `key:value` tags).
   - Sort tasks by **Priority**, **Order**, **A–Z**, or **Due Date**.
 

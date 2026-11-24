@@ -18,6 +18,7 @@
       --accent: #3b82f6;
       --accent-hover: #2563eb;
       --accent-soft: rgba(59, 130, 246, 0.14);
+      --accent-fg: #ffffff;
       --danger: #ef4444;
       --danger-soft: rgba(239, 68, 68, 0.14);
       --success: #22c55e;
@@ -112,6 +113,7 @@
       align-items: center;
       gap: 6px;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
     .btn {
@@ -131,18 +133,23 @@
       transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
 
-    .btn:hover {
+    .btn:hover:not(:disabled) {
       background-color: var(--bg-hover);
       border-color: var(--border-strong);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .btn-primary {
       background-color: var(--accent);
       border-color: var(--accent);
-      color: #ffffff;
+      color: var(--accent-fg);
     }
 
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       background-color: var(--accent-hover);
       border-color: var(--accent-hover);
     }
@@ -153,7 +160,7 @@
       background-color: rgba(239, 68, 68, 0.08);
     }
 
-    .btn-danger:hover {
+    .btn-danger:hover:not(:disabled) {
       background-color: rgba(239, 68, 68, 0.18);
       border-color: rgba(239, 68, 68, 0.55);
     }
@@ -220,7 +227,7 @@
       font-size: 10px;
       font-weight: 600;
       background-color: var(--accent);
-      color: #fff;
+      color: var(--accent-fg);
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -294,7 +301,7 @@
     .filter-btn.active {
       background-color: var(--accent-soft);
       border-color: var(--accent);
-      color: #ffffff;
+      color: var(--text-primary);
     }
 
     .filter-btn[data-color="amber"].active {
@@ -353,6 +360,9 @@
       border-radius: 6px;
       overflow: hidden;
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     .task-list {
@@ -365,7 +375,7 @@
       gap: 6px;
       padding: 2px 6px;
       min-height: 22px;
-      border-bottom: 1px solid rgba(35, 40, 52, 0.65);
+      border-bottom: 1px solid var(--border-subtle);
       transition: background-color 0.1s ease;
     }
 
@@ -377,11 +387,23 @@
       background-color: var(--bg-hover);
     }
 
+    .task-row.editing {
+      align-items: flex-start;
+      padding-top: 4px;
+      padding-bottom: 4px;
+      background-color: var(--bg-elevated);
+    }
+
+    .task-row.editing .task-check-btn,
+    .task-row.editing .task-remove-btn {
+      margin-top: 3px;
+    }
+
     .task-check-btn {
       width: 14px;
       height: 14px;
       border-radius: 3px;
-      border: 1px solid var(--border-strong);
+      border: 1.5px solid var(--border-strong);
       background-color: transparent;
       display: inline-flex;
       align-items: center;
@@ -394,7 +416,7 @@
     }
 
     .task-check-btn:hover {
-      border-color: var(--accent);
+      filter: brightness(1.2);
     }
 
     .task-row.completed .task-check-btn {
@@ -417,16 +439,27 @@
       text-align: left;
     }
 
+    .task-content.priority-a {
+      font-weight: 700;
+    }
+
     .task-row.completed .task-content {
-      color: var(--text-muted);
+      color: var(--text-muted) !important;
       text-decoration: line-through;
     }
 
-    .task-edit-input {
+    .task-edit-wrap {
       flex: 1;
       min-width: 0;
-      height: 20px;
-      padding: 0 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .task-edit-input {
+      width: 100%;
+      height: 22px;
+      padding: 0 6px;
       font-size: 10px;
       font-family: var(--font-mono);
       background-color: var(--bg-canvas);
@@ -434,6 +467,67 @@
       border-radius: 3px;
       color: var(--text-primary);
       outline: none;
+    }
+
+    .priority-quick-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .priority-quick-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-right: 2px;
+    }
+
+    .priority-quick-btn {
+      height: 18px;
+      padding: 0 6px;
+      font-size: 9px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      border-radius: 3px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-canvas);
+      color: var(--text-secondary);
+      transition: all 0.12s ease;
+    }
+
+    .priority-quick-btn:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+      background-color: var(--bg-hover);
+    }
+
+    .priority-quick-btn.active {
+      color: #0b0d10;
+      font-weight: 700;
+    }
+
+    .task-edit-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .task-edit-action-btn {
+      height: 18px;
+      padding: 0 6px;
+      font-size: 9px;
+      font-weight: 500;
+      border-radius: 3px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface);
+      color: var(--text-secondary);
+    }
+
+    .task-edit-action-btn.save {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-fg);
     }
 
     .task-remove-btn {
@@ -455,7 +549,6 @@
       color: #fca5a5;
     }
 
-    /* Touch friendliness on coarse pointers while maintaining compact 10px text */
     @media (pointer: coarse) {
       .task-row {
         min-height: 28px;
@@ -483,6 +576,66 @@
       margin-bottom: 10px;
     }
 
+    /* Classic Google-style Pagination Bar */
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 7px 10px;
+      border-top: 1px solid var(--border-subtle);
+      background-color: var(--bg-elevated);
+      flex-wrap: wrap;
+    }
+
+    .page-btn {
+      min-width: 24px;
+      height: 22px;
+      padding: 0 6px;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      border-radius: 4px;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .page-btn:hover:not(:disabled):not(.active) {
+      background-color: var(--bg-hover);
+      text-decoration: underline;
+    }
+
+    .page-btn.active {
+      color: var(--text-primary);
+      font-weight: 700;
+      background-color: var(--accent-soft);
+      border: 1px solid var(--accent);
+      cursor: default;
+    }
+
+    .page-btn:disabled {
+      color: var(--text-muted);
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .page-ellipsis {
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 0 4px;
+      user-select: none;
+    }
+
+    .page-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-left: 8px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
     /* Modals */
     .modal-backdrop {
       position: fixed;
@@ -501,7 +654,7 @@
 
     .modal {
       width: 100%;
-      max-width: 520px;
+      max-width: 540px;
       max-height: 88vh;
       overflow-y: auto;
       background-color: var(--bg-surface);
@@ -572,6 +725,154 @@
       font-family: var(--font-mono);
       font-size: 10px;
       resize: vertical;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+    }
+
+    .setting-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .setting-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .setting-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .setting-number-input {
+      width: 72px;
+      height: 26px;
+      padding: 0 8px;
+      text-align: center;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      color: var(--text-primary);
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .theme-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .theme-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: left;
+      transition: all 0.12s ease;
+    }
+
+    .theme-option-btn:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+      background-color: var(--bg-hover);
+    }
+
+    .theme-option-btn.active {
+      border-color: var(--accent);
+      background-color: var(--accent-soft);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .theme-swatch-pair {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .theme-swatch-bg {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px 0 0 3px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .theme-swatch-accent {
+      width: 10px;
+      height: 12px;
+      border-radius: 0 3px 3px 0;
+    }
+
+    .priority-color-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 440px) {
+      .priority-color-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .priority-color-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 11px;
+    }
+
+    .color-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .color-swatch-input {
+      width: 26px;
+      height: 22px;
+      padding: 0;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .color-hex-text {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      width: 56px;
     }
 
     .custom-filter-list {
@@ -685,6 +986,7 @@
       </div>
       <div class="topbar-actions">
         <button type="button" class="btn btn-sm" id="openFiltersBtn" title="Customize filter buttons">Customize Filters</button>
+        <button type="button" class="btn btn-sm" id="openSettingsBtn" title="Theme, pagination, and priority color settings">Settings</button>
         <button type="button" class="btn btn-sm" id="openBackupBtn" title="Export or restore local backup">Backup &amp; Restore</button>
       </div>
     </header>
@@ -731,12 +1033,100 @@
 
     <!-- Compact Task List (10px font-size, content-only) -->
     <main class="task-list-container">
-      <ul class="task-list" id="taskList" aria-label="Tasks"></ul>
-      <div class="empty-state" id="emptyState" style="display: none;">
-        <p id="emptyMessage">No tasks match the current view.</p>
-        <button type="button" class="btn btn-sm" id="resetFilterBtn">Show All Tasks</button>
+      <div>
+        <ul class="task-list" id="taskList" aria-label="Tasks"></ul>
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <p id="emptyMessage">No tasks match the current view.</p>
+          <button type="button" class="btn btn-sm" id="resetFilterBtn">Show All Tasks</button>
+        </div>
       </div>
+      <nav class="pagination-bar" id="paginationBar" aria-label="Task pages" style="display: none;"></nav>
     </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="settingsModalTitle">Settings</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeSettingsBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <!-- Theme Section -->
+      <div class="modal-section">
+        <div class="modal-label">Theme</div>
+        <div class="theme-grid" id="themeGrid"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Pagination Section -->
+      <div class="modal-section">
+        <div class="modal-label">Pagination</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="pageSizeInput" class="setting-name">Tasks per page</label>
+            <span class="setting-desc">Number of tasks shown on each page (default: 10).</span>
+          </div>
+          <input
+            type="number"
+            id="pageSizeInput"
+            class="setting-number-input"
+            min="1"
+            max="500"
+            value="10"
+          />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Checkbox Priority Colors -->
+      <div class="modal-section">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="modal-label">Checkbox Priority Colors (A–F)</span>
+          <button type="button" class="btn btn-sm" id="resetDefaultCheckboxColorsBtn">Reset Colors</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="colorizeCheckboxesInput" class="setting-name">Color checkboxes by priority</label>
+            <span class="setting-desc">Tint task checkboxes based on (A) through (F) priority.</span>
+          </div>
+          <input type="checkbox" id="colorizeCheckboxesInput" checked style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;" />
+        </div>
+
+        <div class="priority-color-grid" id="checkboxColorGrid"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Priority Font Colors (A-F) -->
+      <div class="modal-section">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="modal-label">Priority Font Colors (A–F)</span>
+          <button type="button" class="btn btn-sm" id="resetDefaultTextColorsBtn">Reset Font Colors</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="boldPriorityAInput" class="setting-name">Bold (A) priority tasks</label>
+            <span class="setting-desc">Render priority (A) task text in bold by default.</span>
+          </div>
+          <input type="checkbox" id="boldPriorityAInput" checked style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;" />
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="colorizeTextInput" class="setting-name">Color task text by priority</label>
+            <span class="setting-desc">Apply custom font colors to priorities (A) through (F).</span>
+          </div>
+          <input type="checkbox" id="colorizeTextInput" checked style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;" />
+        </div>
+
+        <div class="priority-color-grid" id="textColorGrid"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Customize Filters Modal -->
@@ -800,7 +1190,7 @@
           <button type="button" class="btn btn-sm" id="copyRawBtn">Copy todo.txt</button>
         </div>
         <p class="modal-help">
-          <code>todo.txt</code> exports standard plain-text lines compatible with any todo.txt app. Full JSON includes tasks and custom filter buttons.
+          <code>todo.txt</code> exports standard plain-text lines compatible with any todo.txt app. Full JSON includes tasks, custom filter buttons, and settings.
         </p>
       </div>
 
@@ -842,21 +1232,147 @@
         INIT: 'todotxt_offline_init_v1'
       };
 
+      var PRIORITIES = ['A', 'B', 'C', 'D', 'E', 'F'];
+
       var DEFAULT_FILTERS = [
         { id: 'f_all', label: 'All', query: '', color: 'blue', visible: true },
         { id: 'f_open', label: 'Open', query: 'is:open', color: 'sky', visible: true },
-        { id: 'f_high', label: 'Priority A-B', query: '(A-B) is:open', color: 'amber', visible: true },
+        { id: 'f_p1', label: 'P1', query: '(A-B) is:open', color: 'amber', visible: true },
+        { id: 'f_p2', label: 'P2', query: '(C-D) is:open', color: 'sky', visible: true },
+        { id: 'f_p3', label: 'P3', query: '(E-F) is:open', color: 'violet', visible: true },
         { id: 'f_done', label: 'Done', query: 'is:done', color: 'emerald', visible: true }
       ];
 
+      var DEFAULT_PRIORITY_COLORS = {
+        A: '#eab308',
+        B: '#ef4444',
+        C: '#3b82f6',
+        D: '#22c55e',
+        E: '#a855f7',
+        F: '#06b6d4'
+      };
+
+      var DEFAULT_TEXT_COLORS = {
+        A: '#fde047',
+        B: '#fca5a5',
+        C: '#93c5fd',
+        D: '#86efac',
+        E: '#d8b4fe',
+        F: '#67e8f9'
+      };
+
+      var THEMES = {
+        midnight: {
+          label: 'Midnight',
+          bgCanvas: '#0b0d10',
+          bgSurface: '#12151b',
+          bgElevated: '#181c24',
+          bgHover: '#1d222c',
+          borderSubtle: '#232834',
+          borderStrong: '#323949',
+          textPrimary: '#e6e9ef',
+          textSecondary: '#8c95a6',
+          textMuted: '#5a6272',
+          accent: '#3b82f6',
+          accentHover: '#2563eb',
+          accentSoft: 'rgba(59, 130, 246, 0.14)',
+          accentFg: '#ffffff'
+        },
+        slate: {
+          label: 'Slate',
+          bgCanvas: '#090e1a',
+          bgSurface: '#0f172a',
+          bgElevated: '#162033',
+          bgHover: '#1e293b',
+          borderSubtle: '#1e293b',
+          borderStrong: '#334155',
+          textPrimary: '#f1f5f9',
+          textSecondary: '#94a3b8',
+          textMuted: '#64748b',
+          accent: '#0ea5e9',
+          accentHover: '#0284c7',
+          accentSoft: 'rgba(14, 165, 233, 0.16)',
+          accentFg: '#ffffff'
+        },
+        zinc: {
+          label: 'Zinc',
+          bgCanvas: '#09090b',
+          bgSurface: '#131316',
+          bgElevated: '#1b1b1f',
+          bgHover: '#232329',
+          borderSubtle: '#27272a',
+          borderStrong: '#3f3f46',
+          textPrimary: '#f4f4f5',
+          textSecondary: '#a1a1aa',
+          textMuted: '#71717a',
+          accent: '#6366f1',
+          accentHover: '#4f46e5',
+          accentSoft: 'rgba(99, 102, 241, 0.16)',
+          accentFg: '#ffffff'
+        },
+        neutral: {
+          label: 'Neutral',
+          bgCanvas: '#0a0a0a',
+          bgSurface: '#141414',
+          bgElevated: '#1c1c1c',
+          bgHover: '#242424',
+          borderSubtle: '#262626',
+          borderStrong: '#404040',
+          textPrimary: '#f5f5f5',
+          textSecondary: '#a3a3a3',
+          textMuted: '#737373',
+          accent: '#d4d4d4',
+          accentHover: '#e5e5e5',
+          accentSoft: 'rgba(212, 212, 212, 0.14)',
+          accentFg: '#0a0a0a'
+        },
+        stone: {
+          label: 'Stone',
+          bgCanvas: '#0c0a09',
+          bgSurface: '#161311',
+          bgElevated: '#1f1b18',
+          bgHover: '#292524',
+          borderSubtle: '#292524',
+          borderStrong: '#44403c',
+          textPrimary: '#f5f5f4',
+          textSecondary: '#a8a29e',
+          textMuted: '#78716c',
+          accent: '#f59e0b',
+          accentHover: '#d97706',
+          accentSoft: 'rgba(245, 158, 11, 0.16)',
+          accentFg: '#0c0a09'
+        },
+        emerald: {
+          label: 'Forest',
+          bgCanvas: '#070f0c',
+          bgSurface: '#0d1914',
+          bgElevated: '#13241d',
+          bgHover: '#193027',
+          borderSubtle: '#1d352b',
+          borderStrong: '#2c4f41',
+          textPrimary: '#ecfdf5',
+          textSecondary: '#86efac',
+          textMuted: '#4d7c66',
+          accent: '#10b981',
+          accentHover: '#059669',
+          accentSoft: 'rgba(16, 185, 129, 0.16)',
+          accentFg: '#070f0c'
+        }
+      };
+
       var SAMPLE_TASKS = [
-        '(A) 2026-11-22 Finalize quarterly budget review +Finance @office due:2026-11-24',
-        '(A) 2026-11-22 Call clinic to confirm Friday appointment +Health @phone',
-        '(B) 2026-11-21 Draft release notes for offline client +Work @laptop',
-        '(B) 2026-11-20 Buy coffee beans and oat milk +Home @errands',
-        '(C) 2026-11-19 Archive old project folders +Maintenance @computer',
-        '2026-11-18 Read backup verification checklist +Ops @reading',
-        'x 2026-11-22 2026-11-17 Sync local storage export test +Work @laptop'
+        '(A) 2026-11-24 Finalize quarterly budget review +Finance @office due:2026-11-26',
+        '(A) 2026-11-24 Call clinic to confirm Friday appointment +Health @phone',
+        '(B) 2026-11-23 Draft release notes for offline client +Work @laptop',
+        '(B) 2026-11-22 Buy coffee beans and oat milk +Home @errands',
+        '(C) 2026-11-21 Archive old project folders +Maintenance @computer',
+        '(C) 2026-11-20 Review pull requests for client module +Work @laptop',
+        '(D) 2026-11-19 Clean desk and organize cables +Home @office',
+        '(D) 2026-11-18 Backup photo library to external drive +Maintenance @home',
+        '(E) 2026-11-18 Organize digital receipts folder +Finance @computer',
+        '(F) 2026-11-17 Read backup verification checklist +Ops @reading',
+        '2026-11-17 Water indoor plants +Home @errands',
+        'x 2026-11-22 2026-11-15 Sync local storage export test +Work @laptop'
       ];
 
       var state = {
@@ -865,12 +1381,38 @@
         activeFilterId: 'f_all',
         searchQuery: '',
         sortBy: 'priority',
+        pageSize: 10,
+        currentPage: 1,
+        theme: 'midnight',
+        boldPriorityA: true,
+        colorizeCheckboxes: true,
+        priorityColors: Object.assign({}, DEFAULT_PRIORITY_COLORS),
+        colorizeText: true,
+        priorityTextColors: Object.assign({}, DEFAULT_TEXT_COLORS),
         editingTaskId: null,
         editingFilterId: null,
         undoSnapshot: null
       };
 
       var toastTimer = null;
+
+      function applyTheme(themeKey) {
+        var t = THEMES[themeKey] || THEMES.midnight;
+        var root = document.documentElement.style;
+        root.setProperty('--bg-canvas', t.bgCanvas);
+        root.setProperty('--bg-surface', t.bgSurface);
+        root.setProperty('--bg-elevated', t.bgElevated);
+        root.setProperty('--bg-hover', t.bgHover);
+        root.setProperty('--border-subtle', t.borderSubtle);
+        root.setProperty('--border-strong', t.borderStrong);
+        root.setProperty('--text-primary', t.textPrimary);
+        root.setProperty('--text-secondary', t.textSecondary);
+        root.setProperty('--text-muted', t.textMuted);
+        root.setProperty('--accent', t.accent);
+        root.setProperty('--accent-hover', t.accentHover);
+        root.setProperty('--accent-soft', t.accentSoft);
+        root.setProperty('--accent-fg', t.accentFg);
+      }
 
       function todayISO() {
         var d = new Date();
@@ -914,7 +1456,6 @@
           remaining = remaining.slice(createMatch[0].length).trim();
         }
 
-        // Extract projects (+tag), contexts (@tag), and key:value metadata
         var projects = [];
         var contexts = [];
         var meta = {};
@@ -954,6 +1495,32 @@
           due: meta.due || null,
           content: content
         };
+      }
+
+      function applyPriorityPrefix(raw, targetPriority) {
+        var text = String(raw || '').trim();
+        var prefix = '';
+        var rest = text;
+
+        if (/^x(\s|$)/.test(rest)) {
+          var doneMatch = rest.match(/^(x(?:\s+\d{4}-\d{2}-\d{2})?)\s*(.*)$/);
+          if (doneMatch) {
+            prefix = doneMatch[1] + ' ';
+            rest = doneMatch[2] || '';
+          }
+        }
+
+        var existingPriMatch = rest.match(/^\(([A-Z])\)\s*(.*)$/);
+        var existingPri = null;
+        if (existingPriMatch) {
+          existingPri = existingPriMatch[1];
+          rest = existingPriMatch[2] || '';
+        }
+
+        if (!targetPriority || existingPri === targetPriority) {
+          return (prefix + rest).trim();
+        }
+        return (prefix + '(' + targetPriority + ') ' + rest).trim();
       }
 
       function toggleRawCompletion(raw) {
@@ -1032,13 +1599,41 @@
         return false;
       }
 
+      function migrateFiltersIfNeeded(filters) {
+        var hasLegacyHigh = filters.some(function (f) { return f.id === 'f_high'; });
+        var hasP1 = filters.some(function (f) { return f.id === 'f_p1'; });
+        if (!hasLegacyHigh || hasP1) return filters;
+
+        var migrated = [];
+        filters.forEach(function (f) {
+          if (f.id === 'f_high') {
+            migrated.push({ id: 'f_p1', label: 'P1', query: '(A-B) is:open', color: 'amber', visible: true });
+            migrated.push({ id: 'f_p2', label: 'P2', query: '(C-D) is:open', color: 'sky', visible: true });
+            migrated.push({ id: 'f_p3', label: 'P3', query: '(E-F) is:open', color: 'violet', visible: true });
+          } else {
+            migrated.push(f);
+          }
+        });
+        if (state.activeFilterId === 'f_high') {
+          state.activeFilterId = 'f_p1';
+        }
+        return migrated;
+      }
+
       function saveState() {
         try {
           localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(state.tasks));
           localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(state.filters));
           localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
             activeFilterId: state.activeFilterId,
-            sortBy: state.sortBy
+            sortBy: state.sortBy,
+            pageSize: state.pageSize,
+            theme: state.theme,
+            boldPriorityA: state.boldPriorityA,
+            colorizeCheckboxes: state.colorizeCheckboxes,
+            priorityColors: state.priorityColors,
+            colorizeText: state.colorizeText,
+            priorityTextColors: state.priorityTextColors
           }));
           localStorage.setItem(STORAGE_KEYS.INIT, '1');
         } catch (err) {
@@ -1069,21 +1664,34 @@
             }
           }
 
+          if (rawSettings) {
+            var s = JSON.parse(rawSettings);
+            if (s.activeFilterId) state.activeFilterId = s.activeFilterId;
+            if (s.sortBy) state.sortBy = s.sortBy;
+            if (typeof s.pageSize === 'number' && s.pageSize >= 1) {
+              state.pageSize = Math.min(500, Math.floor(s.pageSize));
+            }
+            if (s.theme && THEMES[s.theme]) state.theme = s.theme;
+            if (typeof s.boldPriorityA === 'boolean') state.boldPriorityA = s.boldPriorityA;
+            if (typeof s.colorizeCheckboxes === 'boolean') state.colorizeCheckboxes = s.colorizeCheckboxes;
+            if (s.priorityColors && typeof s.priorityColors === 'object') {
+              state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS, s.priorityColors);
+            }
+            if (typeof s.colorizeText === 'boolean') state.colorizeText = s.colorizeText;
+            if (s.priorityTextColors && typeof s.priorityTextColors === 'object') {
+              state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS, s.priorityTextColors);
+            }
+          }
+
           if (rawFilters) {
             var parsedFilters = JSON.parse(rawFilters);
             if (Array.isArray(parsedFilters) && parsedFilters.length > 0) {
-              state.filters = parsedFilters;
+              state.filters = migrateFiltersIfNeeded(parsedFilters);
             } else {
               state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
             }
           } else {
             state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
-          }
-
-          if (rawSettings) {
-            var s = JSON.parse(rawSettings);
-            if (s.activeFilterId) state.activeFilterId = s.activeFilterId;
-            if (s.sortBy) state.sortBy = s.sortBy;
           }
         } catch (err) {
           state.tasks = [];
@@ -1142,6 +1750,16 @@
         return count;
       }
 
+      function getCheckboxStyleForTask(parsed) {
+        if (!state.colorizeCheckboxes || !parsed.priority) return null;
+        return state.priorityColors[parsed.priority] || null;
+      }
+
+      function getTextColorForTask(parsed) {
+        if (!state.colorizeText || parsed.completed || !parsed.priority) return null;
+        return state.priorityTextColors[parsed.priority] || null;
+      }
+
       function renderFilterButtons() {
         var container = document.getElementById('filterButtonsContainer');
         container.innerHTML = '';
@@ -1172,12 +1790,101 @@
 
           btn.addEventListener('click', function () {
             state.activeFilterId = f.id;
+            state.currentPage = 1;
             saveState();
             render();
           });
 
           container.appendChild(btn);
         });
+      }
+
+      function buildPageRange(current, total) {
+        if (total <= 7) {
+          var all = [];
+          for (var i = 1; i <= total; i++) all.push(i);
+          return all;
+        }
+        var pages = [1];
+        var start = Math.max(2, current - 2);
+        var end = Math.min(total - 1, current + 2);
+        if (start > 2) pages.push('...');
+        for (var p = start; p <= end; p++) pages.push(p);
+        if (end < total - 1) pages.push('...');
+        pages.push(total);
+        return pages;
+      }
+
+      function renderPagination(totalItems, totalPages) {
+        var bar = document.getElementById('paginationBar');
+        bar.innerHTML = '';
+
+        if (totalItems === 0 || totalPages <= 1) {
+          bar.style.display = 'none';
+          return;
+        }
+
+        bar.style.display = 'flex';
+
+        var prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'page-btn';
+        prevBtn.textContent = '< Prev';
+        prevBtn.disabled = state.currentPage <= 1;
+        prevBtn.addEventListener('click', function () {
+          if (state.currentPage > 1) {
+            state.currentPage--;
+            state.editingTaskId = null;
+            renderTasks();
+          }
+        });
+        bar.appendChild(prevBtn);
+
+        var range = buildPageRange(state.currentPage, totalPages);
+        range.forEach(function (item) {
+          if (item === '...') {
+            var ell = document.createElement('span');
+            ell.className = 'page-ellipsis';
+            ell.textContent = '...';
+            bar.appendChild(ell);
+          } else {
+            var pBtn = document.createElement('button');
+            pBtn.type = 'button';
+            pBtn.className = 'page-btn' + (item === state.currentPage ? ' active' : '');
+            pBtn.textContent = String(item);
+            pBtn.setAttribute('aria-label', 'Page ' + item);
+            if (item === state.currentPage) {
+              pBtn.setAttribute('aria-current', 'page');
+            }
+            pBtn.addEventListener('click', function () {
+              if (state.currentPage !== item) {
+                state.currentPage = item;
+                state.editingTaskId = null;
+                renderTasks();
+              }
+            });
+            bar.appendChild(pBtn);
+          }
+        });
+
+        var nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'page-btn';
+        nextBtn.textContent = 'Next >';
+        nextBtn.disabled = state.currentPage >= totalPages;
+        nextBtn.addEventListener('click', function () {
+          if (state.currentPage < totalPages) {
+            state.currentPage++;
+            state.editingTaskId = null;
+            renderTasks();
+          }
+        });
+        bar.appendChild(nextBtn);
+
+        var meta = document.createElement('span');
+        meta.className = 'page-meta';
+        meta.textContent = 'Page ' + state.currentPage + ' of ' + totalPages;
+        bar.appendChild(meta);
       }
 
       function renderTasks() {
@@ -1189,6 +1896,14 @@
         var openCount = state.tasks.filter(function (t) { return !parseTodoLine(t.raw).completed; }).length;
         var items = getFilteredAndSortedTasks();
 
+        var pageSize = Math.max(1, state.pageSize || 10);
+        var totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+        if (state.currentPage > totalPages) state.currentPage = totalPages;
+        if (state.currentPage < 1) state.currentPage = 1;
+
+        var startIdx = (state.currentPage - 1) * pageSize;
+        var pageItems = items.slice(startIdx, startIdx + pageSize);
+
         summaryEl.textContent = items.length + ' shown · ' + openCount + ' open · ' + total + ' total';
         listEl.innerHTML = '';
 
@@ -1197,23 +1912,36 @@
           document.getElementById('emptyMessage').textContent = total === 0
             ? 'No tasks yet. Add one above in todo.txt format.'
             : 'No tasks match this filter or search.';
+          renderPagination(0, 1);
           return;
         }
 
         emptyEl.style.display = 'none';
 
-        items.forEach(function (entry) {
+        pageItems.forEach(function (entry) {
           var task = entry.task;
           var parsed = entry.parsed;
+          var isEditing = state.editingTaskId === task.id;
 
           var li = document.createElement('li');
-          li.className = 'task-row' + (parsed.completed ? ' completed' : '');
+          li.className = 'task-row' + (parsed.completed ? ' completed' : '') + (isEditing ? ' editing' : '');
 
           var checkBtn = document.createElement('button');
           checkBtn.type = 'button';
           checkBtn.className = 'task-check-btn';
           checkBtn.setAttribute('aria-label', parsed.completed ? 'Mark incomplete' : 'Mark complete');
           checkBtn.innerHTML = parsed.completed ? '&#10003;' : '';
+
+          var priColor = getCheckboxStyleForTask(parsed);
+          if (priColor) {
+            if (parsed.completed) {
+              checkBtn.style.backgroundColor = priColor;
+              checkBtn.style.borderColor = priColor;
+            } else {
+              checkBtn.style.borderColor = priColor;
+            }
+          }
+
           checkBtn.addEventListener('click', function () {
             task.raw = toggleRawCompletion(task.raw);
             saveState();
@@ -1222,12 +1950,108 @@
 
           li.appendChild(checkBtn);
 
-          if (state.editingTaskId === task.id) {
+          if (isEditing) {
+            var editWrap = document.createElement('div');
+            editWrap.className = 'task-edit-wrap';
+
             var editInput = document.createElement('input');
             editInput.type = 'text';
             editInput.className = 'task-edit-input';
             editInput.value = task.raw;
             editInput.setAttribute('aria-label', 'Edit raw todo.txt line');
+
+            var quickRow = document.createElement('div');
+            quickRow.className = 'priority-quick-row';
+
+            var quickLabel = document.createElement('span');
+            quickLabel.className = 'priority-quick-label';
+            quickLabel.textContent = 'Priority:';
+            quickRow.appendChild(quickLabel);
+
+            var priButtons = {};
+
+            function syncPriorityQuickButtons() {
+              var currentParsed = parseTodoLine(editInput.value);
+              PRIORITIES.forEach(function (letter) {
+                var btn = priButtons[letter];
+                var isActive = currentParsed.priority === letter;
+                var c = state.priorityColors[letter] || DEFAULT_PRIORITY_COLORS[letter] || '#3b82f6';
+                btn.classList.toggle('active', isActive);
+                if (isActive) {
+                  btn.style.backgroundColor = c;
+                  btn.style.borderColor = c;
+                  btn.style.color = '#0b0d10';
+                } else {
+                  btn.style.backgroundColor = '';
+                  btn.style.borderColor = c;
+                  btn.style.color = c;
+                }
+              });
+            }
+
+            PRIORITIES.forEach(function (letter) {
+              var pBtn = document.createElement('button');
+              pBtn.type = 'button';
+              pBtn.className = 'priority-quick-btn';
+              pBtn.textContent = '(' + letter + ')';
+              pBtn.title = 'Set or toggle priority (' + letter + ')';
+              pBtn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+              });
+              pBtn.addEventListener('click', function () {
+                editInput.value = applyPriorityPrefix(editInput.value, letter);
+                syncPriorityQuickButtons();
+                editInput.focus();
+              });
+              priButtons[letter] = pBtn;
+              quickRow.appendChild(pBtn);
+            });
+
+            var clearPriBtn = document.createElement('button');
+            clearPriBtn.type = 'button';
+            clearPriBtn.className = 'priority-quick-btn';
+            clearPriBtn.textContent = 'None';
+            clearPriBtn.title = 'Remove priority';
+            clearPriBtn.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+            });
+            clearPriBtn.addEventListener('click', function () {
+              editInput.value = applyPriorityPrefix(editInput.value, null);
+              syncPriorityQuickButtons();
+              editInput.focus();
+            });
+            quickRow.appendChild(clearPriBtn);
+
+            var editActions = document.createElement('div');
+            editActions.className = 'task-edit-actions';
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'task-edit-action-btn';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+            });
+            cancelBtn.addEventListener('click', function () {
+              committed = true;
+              state.editingTaskId = null;
+              render();
+            });
+
+            var saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'task-edit-action-btn save';
+            saveBtn.textContent = 'Save';
+            saveBtn.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+            });
+            saveBtn.addEventListener('click', function () {
+              commitEdit();
+            });
+
+            editActions.appendChild(cancelBtn);
+            editActions.appendChild(saveBtn);
+            quickRow.appendChild(editActions);
 
             var committed = false;
             function commitEdit() {
@@ -1242,6 +2066,8 @@
               render();
             }
 
+            editInput.addEventListener('input', syncPriorityQuickButtons);
+
             editInput.addEventListener('keydown', function (e) {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -1253,8 +2079,19 @@
               }
             });
 
-            editInput.addEventListener('blur', commitEdit);
-            li.appendChild(editInput);
+            editInput.addEventListener('blur', function () {
+              setTimeout(function () {
+                if (!editWrap.contains(document.activeElement)) {
+                  commitEdit();
+                }
+              }, 0);
+            });
+
+            editWrap.appendChild(editInput);
+            editWrap.appendChild(quickRow);
+            li.appendChild(editWrap);
+
+            syncPriorityQuickButtons();
 
             setTimeout(function () {
               editInput.focus();
@@ -1263,9 +2100,14 @@
           } else {
             var contentBtn = document.createElement('button');
             contentBtn.type = 'button';
-            contentBtn.className = 'task-content';
+            var isBoldA = state.boldPriorityA && parsed.priority === 'A';
+            contentBtn.className = 'task-content' + (isBoldA ? ' priority-a' : '');
             contentBtn.textContent = parsed.content;
             contentBtn.title = 'Click to edit task';
+            var textColor = getTextColorForTask(parsed);
+            if (textColor) {
+              contentBtn.style.color = textColor;
+            }
             contentBtn.addEventListener('click', function () {
               state.editingTaskId = task.id;
               renderTasks();
@@ -1278,6 +2120,9 @@
           removeBtn.className = 'task-remove-btn';
           removeBtn.setAttribute('aria-label', 'Remove task');
           removeBtn.innerHTML = '&times;';
+          removeBtn.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+          });
           removeBtn.addEventListener('click', function () {
             removeTaskSingleTap(task.id);
           });
@@ -1285,6 +2130,8 @@
           li.appendChild(removeBtn);
           listEl.appendChild(li);
         });
+
+        renderPagination(items.length, totalPages);
       }
 
       function removeTaskSingleTap(taskId) {
@@ -1312,6 +2159,104 @@
           toast.classList.remove('visible');
           state.undoSnapshot = null;
         }, 4000);
+      }
+
+      function renderThemeGrid() {
+        var grid = document.getElementById('themeGrid');
+        grid.innerHTML = '';
+
+        Object.keys(THEMES).forEach(function (key) {
+          var t = THEMES[key];
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'theme-option-btn' + (state.theme === key ? ' active' : '');
+
+          var pair = document.createElement('span');
+          pair.className = 'theme-swatch-pair';
+
+          var swBg = document.createElement('span');
+          swBg.className = 'theme-swatch-bg';
+          swBg.style.backgroundColor = t.bgSurface;
+
+          var swAcc = document.createElement('span');
+          swAcc.className = 'theme-swatch-accent';
+          swAcc.style.backgroundColor = t.accent;
+
+          pair.appendChild(swBg);
+          pair.appendChild(swAcc);
+
+          var label = document.createElement('span');
+          label.textContent = t.label;
+
+          btn.appendChild(pair);
+          btn.appendChild(label);
+
+          btn.addEventListener('click', function () {
+            state.theme = key;
+            applyTheme(key);
+            saveState();
+            renderThemeGrid();
+          });
+
+          grid.appendChild(btn);
+        });
+      }
+
+      function renderColorGrid(containerId, colorMap, defaultsMap, onChange) {
+        var grid = document.getElementById(containerId);
+        grid.innerHTML = '';
+
+        PRIORITIES.forEach(function (letter) {
+          var val = colorMap[letter] || defaultsMap[letter];
+
+          var item = document.createElement('div');
+          item.className = 'priority-color-item';
+
+          var label = document.createElement('span');
+          label.innerHTML = 'Priority <strong>(' + letter + ')</strong>';
+
+          var wrap = document.createElement('div');
+          wrap.className = 'color-picker-wrap';
+
+          var hex = document.createElement('span');
+          hex.className = 'color-hex-text';
+          hex.textContent = val;
+
+          var input = document.createElement('input');
+          input.type = 'color';
+          input.className = 'color-swatch-input';
+          input.value = val;
+          input.setAttribute('aria-label', 'Priority ' + letter + ' color');
+          input.addEventListener('input', function (e) {
+            var nextVal = e.target.value;
+            colorMap[letter] = nextVal;
+            hex.textContent = nextVal;
+            onChange();
+          });
+
+          wrap.appendChild(hex);
+          wrap.appendChild(input);
+          item.appendChild(label);
+          item.appendChild(wrap);
+          grid.appendChild(item);
+        });
+      }
+
+      function syncSettingsModalFields() {
+        renderThemeGrid();
+        document.getElementById('pageSizeInput').value = String(state.pageSize);
+        document.getElementById('colorizeCheckboxesInput').checked = state.colorizeCheckboxes;
+        document.getElementById('boldPriorityAInput').checked = state.boldPriorityA;
+        document.getElementById('colorizeTextInput').checked = state.colorizeText;
+
+        renderColorGrid('checkboxColorGrid', state.priorityColors, DEFAULT_PRIORITY_COLORS, function () {
+          saveState();
+          renderTasks();
+        });
+        renderColorGrid('textColorGrid', state.priorityTextColors, DEFAULT_TEXT_COLORS, function () {
+          saveState();
+          renderTasks();
+        });
       }
 
       function renderCustomFilterModalList() {
@@ -1452,6 +2397,7 @@
           });
         }
 
+        state.currentPage = 1;
         saveState();
         render();
         showToast('Imported ' + clean.length + ' task(s).');
@@ -1470,6 +2416,7 @@
           var raw = input.value.trim();
           if (!raw) return;
           state.tasks.unshift({ id: uid(), raw: raw });
+          state.currentPage = 1;
           input.value = '';
           saveState();
           render();
@@ -1480,12 +2427,14 @@
 
         searchInput.addEventListener('input', function () {
           state.searchQuery = searchInput.value;
+          state.currentPage = 1;
           clearSearchBtn.classList.toggle('visible', state.searchQuery.length > 0);
           renderTasks();
         });
 
         clearSearchBtn.addEventListener('click', function () {
           state.searchQuery = '';
+          state.currentPage = 1;
           searchInput.value = '';
           clearSearchBtn.classList.remove('visible');
           renderTasks();
@@ -1494,12 +2443,14 @@
 
         document.getElementById('sortSelect').addEventListener('change', function (e) {
           state.sortBy = e.target.value;
+          state.currentPage = 1;
           saveState();
           renderTasks();
         });
 
         document.getElementById('resetFilterBtn').addEventListener('click', function () {
           state.searchQuery = '';
+          state.currentPage = 1;
           searchInput.value = '';
           clearSearchBtn.classList.remove('visible');
           if (state.filters.length > 0) {
@@ -1518,6 +2469,75 @@
             render();
             document.getElementById('toast').classList.remove('visible');
           }
+        });
+
+        // Settings Modal
+        var settingsModal = document.getElementById('settingsModal');
+        document.getElementById('openSettingsBtn').addEventListener('click', function () {
+          syncSettingsModalFields();
+          settingsModal.classList.add('open');
+        });
+        document.getElementById('closeSettingsBtn').addEventListener('click', function () {
+          settingsModal.classList.remove('open');
+        });
+        settingsModal.addEventListener('click', function (e) {
+          if (e.target === settingsModal) settingsModal.classList.remove('open');
+        });
+
+        document.getElementById('pageSizeInput').addEventListener('input', function (e) {
+          var n = parseInt(e.target.value, 10);
+          if (!isNaN(n) && n >= 1) {
+            state.pageSize = Math.min(500, n);
+            state.currentPage = 1;
+            saveState();
+            renderTasks();
+          }
+        });
+
+        document.getElementById('pageSizeInput').addEventListener('blur', function (e) {
+          var n = parseInt(e.target.value, 10);
+          if (isNaN(n) || n < 1) {
+            state.pageSize = 10;
+            e.target.value = '10';
+            state.currentPage = 1;
+            saveState();
+            renderTasks();
+          }
+        });
+
+        document.getElementById('colorizeCheckboxesInput').addEventListener('change', function (e) {
+          state.colorizeCheckboxes = e.target.checked;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('boldPriorityAInput').addEventListener('change', function (e) {
+          state.boldPriorityA = e.target.checked;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('colorizeTextInput').addEventListener('change', function (e) {
+          state.colorizeText = e.target.checked;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('resetDefaultCheckboxColorsBtn').addEventListener('click', function () {
+          state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS);
+          state.colorizeCheckboxes = true;
+          syncSettingsModalFields();
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('resetDefaultTextColorsBtn').addEventListener('click', function () {
+          state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS);
+          state.colorizeText = true;
+          state.boldPriorityA = true;
+          syncSettingsModalFields();
+          saveState();
+          renderTasks();
         });
 
         // Filters Modal
@@ -1569,6 +2589,7 @@
         document.getElementById('resetDefaultFiltersBtn').addEventListener('click', function () {
           state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
           state.activeFilterId = 'f_all';
+          state.currentPage = 1;
           resetFilterForm();
           saveState();
           render();
@@ -1599,7 +2620,14 @@
             exportedAt: new Date().toISOString(),
             tasks: state.tasks,
             filters: state.filters,
-            sortBy: state.sortBy
+            sortBy: state.sortBy,
+            pageSize: state.pageSize,
+            theme: state.theme,
+            boldPriorityA: state.boldPriorityA,
+            colorizeCheckboxes: state.colorizeCheckboxes,
+            priorityColors: state.priorityColors,
+            colorizeText: state.colorizeText,
+            priorityTextColors: state.priorityTextColors
           }, null, 2);
           downloadFile('todotxt_backup_' + todayISO() + '.json', payload, 'application/json;charset=utf-8');
           showToast('Exported full JSON backup');
@@ -1634,8 +2662,18 @@
                 var obj = JSON.parse(text);
                 if (Array.isArray(obj.tasks)) {
                   var lines = obj.tasks.map(function (t) { return typeof t === 'string' ? t : t.raw; });
-                  if (mode === 'replace' && Array.isArray(obj.filters) && obj.filters.length > 0) {
-                    state.filters = obj.filters;
+                  if (mode === 'replace') {
+                    if (Array.isArray(obj.filters) && obj.filters.length > 0) state.filters = migrateFiltersIfNeeded(obj.filters);
+                    if (typeof obj.pageSize === 'number' && obj.pageSize >= 1) state.pageSize = obj.pageSize;
+                    if (obj.theme && THEMES[obj.theme]) {
+                      state.theme = obj.theme;
+                      applyTheme(obj.theme);
+                    }
+                    if (typeof obj.boldPriorityA === 'boolean') state.boldPriorityA = obj.boldPriorityA;
+                    if (typeof obj.colorizeCheckboxes === 'boolean') state.colorizeCheckboxes = obj.colorizeCheckboxes;
+                    if (obj.priorityColors) state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS, obj.priorityColors);
+                    if (typeof obj.colorizeText === 'boolean') state.colorizeText = obj.colorizeText;
+                    if (obj.priorityTextColors) state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS, obj.priorityTextColors);
                   }
                   importLines(lines, mode);
                   backupModal.classList.remove('open');
@@ -1685,6 +2723,7 @@
 
           if (e.key === 'Escape') {
             filtersModal.classList.remove('open');
+            settingsModal.classList.remove('open');
             backupModal.classList.remove('open');
             if (state.editingTaskId) {
               state.editingTaskId = null;
@@ -1704,6 +2743,7 @@
       }
 
       loadState();
+      applyTheme(state.theme);
       bindEvents();
       render();
     })();

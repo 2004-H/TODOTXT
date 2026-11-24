@@ -7,6 +7,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Settings,
   SlidersHorizontal,
   Trash2,
   Upload,
@@ -16,6 +17,8 @@ import {
 type FilterColor = 'blue' | 'amber' | 'emerald' | 'rose' | 'violet' | 'sky';
 type SortMode = 'priority' | 'added' | 'alpha' | 'due';
 type ImportMode = 'merge' | 'replace';
+type PriorityKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+type ThemeKey = 'midnight' | 'slate' | 'zinc' | 'neutral' | 'stone' | 'emerald';
 
 interface TaskItem {
   id: string;
@@ -43,6 +46,23 @@ interface ParsedTodo {
   content: string;
 }
 
+interface ThemeConfig {
+  label: string;
+  bgCanvas: string;
+  bgSurface: string;
+  bgElevated: string;
+  bgHover: string;
+  borderSubtle: string;
+  borderStrong: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+  accentHover: string;
+  accentSoft: string;
+  accentFg: string;
+}
+
 const STORAGE_KEYS = {
   TASKS: 'todotxt_offline_tasks_v1',
   FILTERS: 'todotxt_offline_filters_v1',
@@ -50,21 +70,147 @@ const STORAGE_KEYS = {
   INIT: 'todotxt_offline_init_v1',
 };
 
+const PRIORITIES: PriorityKey[] = ['A', 'B', 'C', 'D', 'E', 'F'];
+
 const DEFAULT_FILTERS: FilterButtonConfig[] = [
   { id: 'f_all', label: 'All', query: '', color: 'blue', visible: true },
   { id: 'f_open', label: 'Open', query: 'is:open', color: 'sky', visible: true },
-  { id: 'f_high', label: 'Priority A-B', query: '(A-B) is:open', color: 'amber', visible: true },
+  { id: 'f_p1', label: 'P1', query: '(A-B) is:open', color: 'amber', visible: true },
+  { id: 'f_p2', label: 'P2', query: '(C-D) is:open', color: 'sky', visible: true },
+  { id: 'f_p3', label: 'P3', query: '(E-F) is:open', color: 'violet', visible: true },
   { id: 'f_done', label: 'Done', query: 'is:done', color: 'emerald', visible: true },
 ];
 
+const DEFAULT_PRIORITY_COLORS: Record<PriorityKey, string> = {
+  A: '#eab308',
+  B: '#ef4444',
+  C: '#3b82f6',
+  D: '#22c55e',
+  E: '#a855f7',
+  F: '#06b6d4',
+};
+
+const DEFAULT_TEXT_COLORS: Record<PriorityKey, string> = {
+  A: '#fde047',
+  B: '#fca5a5',
+  C: '#93c5fd',
+  D: '#86efac',
+  E: '#d8b4fe',
+  F: '#67e8f9',
+};
+
+const THEMES: Record<ThemeKey, ThemeConfig> = {
+  midnight: {
+    label: 'Midnight',
+    bgCanvas: '#0b0d10',
+    bgSurface: '#12151b',
+    bgElevated: '#181c24',
+    bgHover: '#1d222c',
+    borderSubtle: '#232834',
+    borderStrong: '#323949',
+    textPrimary: '#e6e9ef',
+    textSecondary: '#8c95a6',
+    textMuted: '#5a6272',
+    accent: '#3b82f6',
+    accentHover: '#2563eb',
+    accentSoft: 'rgba(59, 130, 246, 0.14)',
+    accentFg: '#ffffff',
+  },
+  slate: {
+    label: 'Slate',
+    bgCanvas: '#090e1a',
+    bgSurface: '#0f172a',
+    bgElevated: '#162033',
+    bgHover: '#1e293b',
+    borderSubtle: '#1e293b',
+    borderStrong: '#334155',
+    textPrimary: '#f1f5f9',
+    textSecondary: '#94a3b8',
+    textMuted: '#64748b',
+    accent: '#0ea5e9',
+    accentHover: '#0284c7',
+    accentSoft: 'rgba(14, 165, 233, 0.16)',
+    accentFg: '#ffffff',
+  },
+  zinc: {
+    label: 'Zinc',
+    bgCanvas: '#09090b',
+    bgSurface: '#131316',
+    bgElevated: '#1b1b1f',
+    bgHover: '#232329',
+    borderSubtle: '#27272a',
+    borderStrong: '#3f3f46',
+    textPrimary: '#f4f4f5',
+    textSecondary: '#a1a1aa',
+    textMuted: '#71717a',
+    accent: '#6366f1',
+    accentHover: '#4f46e5',
+    accentSoft: 'rgba(99, 102, 241, 0.16)',
+    accentFg: '#ffffff',
+  },
+  neutral: {
+    label: 'Neutral',
+    bgCanvas: '#0a0a0a',
+    bgSurface: '#141414',
+    bgElevated: '#1c1c1c',
+    bgHover: '#242424',
+    borderSubtle: '#262626',
+    borderStrong: '#404040',
+    textPrimary: '#f5f5f5',
+    textSecondary: '#a3a3a3',
+    textMuted: '#737373',
+    accent: '#d4d4d4',
+    accentHover: '#e5e5e5',
+    accentSoft: 'rgba(212, 212, 212, 0.14)',
+    accentFg: '#0a0a0a',
+  },
+  stone: {
+    label: 'Stone',
+    bgCanvas: '#0c0a09',
+    bgSurface: '#161311',
+    bgElevated: '#1f1b18',
+    bgHover: '#292524',
+    borderSubtle: '#292524',
+    borderStrong: '#44403c',
+    textPrimary: '#f5f5f4',
+    textSecondary: '#a8a29e',
+    textMuted: '#78716c',
+    accent: '#f59e0b',
+    accentHover: '#d97706',
+    accentSoft: 'rgba(245, 158, 11, 0.16)',
+    accentFg: '#0c0a09',
+  },
+  emerald: {
+    label: 'Forest',
+    bgCanvas: '#070f0c',
+    bgSurface: '#0d1914',
+    bgElevated: '#13241d',
+    bgHover: '#193027',
+    borderSubtle: '#1d352b',
+    borderStrong: '#2c4f41',
+    textPrimary: '#ecfdf5',
+    textSecondary: '#86efac',
+    textMuted: '#4d7c66',
+    accent: '#10b981',
+    accentHover: '#059669',
+    accentSoft: 'rgba(16, 185, 129, 0.16)',
+    accentFg: '#070f0c',
+  },
+};
+
 const SAMPLE_TASKS: string[] = [
-  '(A) 2026-11-22 Finalize quarterly budget review +Finance @office due:2026-11-24',
-  '(A) 2026-11-22 Call clinic to confirm Friday appointment +Health @phone',
-  '(B) 2026-11-21 Draft release notes for offline client +Work @laptop',
-  '(B) 2026-11-20 Buy coffee beans and oat milk +Home @errands',
-  '(C) 2026-11-19 Archive old project folders +Maintenance @computer',
-  '2026-11-18 Read backup verification checklist +Ops @reading',
-  'x 2026-11-22 2026-11-17 Sync local storage export test +Work @laptop',
+  '(A) 2026-11-24 Finalize quarterly budget review +Finance @office due:2026-11-26',
+  '(A) 2026-11-24 Call clinic to confirm Friday appointment +Health @phone',
+  '(B) 2026-11-23 Draft release notes for offline client +Work @laptop',
+  '(B) 2026-11-22 Buy coffee beans and oat milk +Home @errands',
+  '(C) 2026-11-21 Archive old project folders +Maintenance @computer',
+  '(C) 2026-11-20 Review pull requests for client module +Work @laptop',
+  '(D) 2026-11-19 Clean desk and organize cables +Home @office',
+  '(D) 2026-11-18 Backup photo library to external drive +Maintenance @home',
+  '(E) 2026-11-18 Organize digital receipts folder +Finance @computer',
+  '(F) 2026-11-17 Read backup verification checklist +Ops @reading',
+  '2026-11-17 Water indoor plants +Home @errands',
+  'x 2026-11-22 2026-11-15 Sync local storage export test +Work @laptop',
 ];
 
 function todayISO(): string {
@@ -146,6 +292,32 @@ function parseTodoLine(raw: string): ParsedTodo {
   };
 }
 
+function applyPriorityPrefix(raw: string, targetPriority: PriorityKey | null): string {
+  const text = String(raw || '').trim();
+  let prefix = '';
+  let rest = text;
+
+  if (/^x(\s|$)/.test(rest)) {
+    const doneMatch = rest.match(/^(x(?:\s+\d{4}-\d{2}-\d{2})?)\s*(.*)$/);
+    if (doneMatch) {
+      prefix = `${doneMatch[1]} `;
+      rest = doneMatch[2] || '';
+    }
+  }
+
+  const existingPriMatch = rest.match(/^\(([A-Z])\)\s*(.*)$/);
+  let existingPri: string | null = null;
+  if (existingPriMatch) {
+    existingPri = existingPriMatch[1];
+    rest = existingPriMatch[2] || '';
+  }
+
+  if (!targetPriority || existingPri === targetPriority) {
+    return `${prefix}${rest}`.trim();
+  }
+  return `${prefix}(${targetPriority}) ${rest}`.trim();
+}
+
 function toggleRawCompletion(raw: string): string {
   const trimmed = String(raw || '').trim();
   const today = todayISO();
@@ -216,6 +388,38 @@ function matchesQuery(parsed: ParsedTodo, query: string): boolean {
   return false;
 }
 
+function migrateFiltersIfNeeded(filters: FilterButtonConfig[]): FilterButtonConfig[] {
+  const hasLegacyHigh = filters.some((f) => f.id === 'f_high');
+  const hasP1 = filters.some((f) => f.id === 'f_p1');
+  if (!hasLegacyHigh || hasP1) return filters;
+
+  const migrated: FilterButtonConfig[] = [];
+  for (const f of filters) {
+    if (f.id === 'f_high') {
+      migrated.push({ id: 'f_p1', label: 'P1', query: '(A-B) is:open', color: 'amber', visible: true });
+      migrated.push({ id: 'f_p2', label: 'P2', query: '(C-D) is:open', color: 'sky', visible: true });
+      migrated.push({ id: 'f_p3', label: 'P3', query: '(E-F) is:open', color: 'violet', visible: true });
+    } else {
+      migrated.push(f);
+    }
+  }
+  return migrated;
+}
+
+function buildPageRange(current: number, total: number): Array<number | '...'> {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, idx) => idx + 1);
+  }
+  const pages: Array<number | '...'> = [1];
+  const start = Math.max(2, current - 2);
+  const end = Math.min(total - 1, current + 2);
+  if (start > 2) pages.push('...');
+  for (let p = start; p <= end; p++) pages.push(p);
+  if (end < total - 1) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
 function downloadBlob(filename: string, content: string, mimeType: string): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -229,12 +433,12 @@ function downloadBlob(filename: string, content: string, mimeType: string): void
 }
 
 const ACTIVE_COLOR_STYLES: Record<FilterColor, string> = {
-  blue: 'bg-blue-500/15 border-blue-500 text-white',
-  amber: 'bg-amber-500/15 border-amber-500 text-white',
-  emerald: 'bg-emerald-500/15 border-emerald-500 text-white',
-  rose: 'bg-rose-500/15 border-rose-500 text-white',
-  violet: 'bg-violet-500/15 border-violet-500 text-white',
-  sky: 'bg-sky-500/15 border-sky-500 text-white',
+  blue: 'bg-blue-500/15 border-blue-500 text-[var(--text-primary)]',
+  amber: 'bg-amber-500/15 border-amber-500 text-[var(--text-primary)]',
+  emerald: 'bg-emerald-500/15 border-emerald-500 text-[var(--text-primary)]',
+  rose: 'bg-rose-500/15 border-rose-500 text-[var(--text-primary)]',
+  violet: 'bg-violet-500/15 border-violet-500 text-[var(--text-primary)]',
+  sky: 'bg-sky-500/15 border-sky-500 text-[var(--text-primary)]',
 };
 
 export default function App() {
@@ -265,7 +469,9 @@ export default function App() {
       const rawFilters = localStorage.getItem(STORAGE_KEYS.FILTERS);
       if (rawFilters) {
         const parsed = JSON.parse(rawFilters);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return migrateFiltersIfNeeded(parsed);
+        }
       }
     } catch {
       // ignore storage errors
@@ -278,6 +484,7 @@ export default function App() {
       const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (rawSettings) {
         const parsed = JSON.parse(rawSettings);
+        if (parsed.activeFilterId === 'f_high') return 'f_p1';
         if (parsed.activeFilterId) return parsed.activeFilterId;
       }
     } catch {
@@ -299,12 +506,113 @@ export default function App() {
     return 'priority';
   });
 
+  const [pageSize, setPageSize] = useState<number>(() => {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (typeof parsed.pageSize === 'number' && parsed.pageSize >= 1) {
+          return Math.min(500, Math.floor(parsed.pageSize));
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return 10;
+  });
+
+  const [theme, setTheme] = useState<ThemeKey>(() => {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (parsed.theme && THEMES[parsed.theme as ThemeKey]) {
+          return parsed.theme as ThemeKey;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return 'midnight';
+  });
+
+  const [boldPriorityA, setBoldPriorityA] = useState<boolean>(() => {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (typeof parsed.boldPriorityA === 'boolean') return parsed.boldPriorityA;
+      }
+    } catch {
+      // ignore
+    }
+    return true;
+  });
+
+  const [colorizeCheckboxes, setColorizeCheckboxes] = useState<boolean>(() => {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (typeof parsed.colorizeCheckboxes === 'boolean') return parsed.colorizeCheckboxes;
+      }
+    } catch {
+      // ignore
+    }
+    return true;
+  });
+
+  const [priorityColors, setPriorityColors] = useState<Record<PriorityKey, string>>(() => {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (parsed.priorityColors && typeof parsed.priorityColors === 'object') {
+          return { ...DEFAULT_PRIORITY_COLORS, ...parsed.priorityColors };
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return { ...DEFAULT_PRIORITY_COLORS };
+  });
+
+  const [colorizeText, setColorizeText] = useState<boolean>(() => {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (typeof parsed.colorizeText === 'boolean') return parsed.colorizeText;
+      }
+    } catch {
+      // ignore
+    }
+    return true;
+  });
+
+  const [priorityTextColors, setPriorityTextColors] = useState<Record<PriorityKey, string>>(() => {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (parsed.priorityTextColors && typeof parsed.priorityTextColors === 'object') {
+          return { ...DEFAULT_TEXT_COLORS, ...parsed.priorityTextColors };
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return { ...DEFAULT_TEXT_COLORS };
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
   const [newTaskText, setNewTaskText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskDraft, setEditingTaskDraft] = useState('');
 
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [backupModalOpen, setBackupModalOpen] = useState(false);
 
   const [editingFilterId, setEditingFilterId] = useState<string | null>(null);
@@ -322,6 +630,29 @@ export default function App() {
   const addInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editWrapRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  // Apply active theme CSS variables
+  useEffect(() => {
+    const t = THEMES[theme] || THEMES.midnight;
+    const root = document.documentElement.style;
+    root.setProperty('--bg-canvas', t.bgCanvas);
+    root.setProperty('--bg-surface', t.bgSurface);
+    root.setProperty('--bg-elevated', t.bgElevated);
+    root.setProperty('--bg-hover', t.bgHover);
+    root.setProperty('--border-subtle', t.borderSubtle);
+    root.setProperty('--border-strong', t.borderStrong);
+    root.setProperty('--text-primary', t.textPrimary);
+    root.setProperty('--text-secondary', t.textSecondary);
+    root.setProperty('--text-muted', t.textMuted);
+    root.setProperty('--accent', t.accent);
+    root.setProperty('--accent-hover', t.accentHover);
+    root.setProperty('--accent-soft', t.accentSoft);
+    root.setProperty('--accent-fg', t.accentFg);
+    document.body.style.backgroundColor = t.bgCanvas;
+    document.body.style.color = t.textPrimary;
+  }, [theme]);
 
   // Sync persistence to localStorage
   useEffect(() => {
@@ -330,13 +661,35 @@ export default function App() {
       localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(filters));
       localStorage.setItem(
         STORAGE_KEYS.SETTINGS,
-        JSON.stringify({ activeFilterId, sortBy })
+        JSON.stringify({
+          activeFilterId,
+          sortBy,
+          pageSize,
+          theme,
+          boldPriorityA,
+          colorizeCheckboxes,
+          priorityColors,
+          colorizeText,
+          priorityTextColors,
+        })
       );
       localStorage.setItem(STORAGE_KEYS.INIT, '1');
     } catch {
       // ignore storage quota errors
     }
-  }, [tasks, filters, activeFilterId, sortBy]);
+  }, [
+    tasks,
+    filters,
+    activeFilterId,
+    sortBy,
+    pageSize,
+    theme,
+    boldPriorityA,
+    colorizeCheckboxes,
+    priorityColors,
+    colorizeText,
+    priorityTextColors,
+  ]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -346,6 +699,7 @@ export default function App() {
 
       if (e.key === 'Escape') {
         setFiltersModalOpen(false);
+        setSettingsModalOpen(false);
         setBackupModalOpen(false);
         setEditingTaskId(null);
         return;
@@ -438,9 +792,34 @@ export default function App() {
     });
   }, [parsedTasks, effectiveActiveFilter, searchQuery, sortBy]);
 
+  const safePageSize = Math.max(1, pageSize || 10);
+  const totalPages = Math.max(1, Math.ceil(displayedTasks.length / safePageSize));
+  const clampedPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  useEffect(() => {
+    if (currentPage !== clampedPage) {
+      setCurrentPage(clampedPage);
+    }
+  }, [currentPage, clampedPage]);
+
+  const paginatedTasks = useMemo(() => {
+    const startIdx = (clampedPage - 1) * safePageSize;
+    return displayedTasks.slice(startIdx, startIdx + safePageSize);
+  }, [displayedTasks, clampedPage, safePageSize]);
+
+  const pageRange = useMemo(
+    () => buildPageRange(clampedPage, totalPages),
+    [clampedPage, totalPages]
+  );
+
   const openCount = useMemo(
     () => parsedTasks.filter((t) => !t.parsed.completed).length,
     [parsedTasks]
+  );
+
+  const editingDraftPriority = useMemo(
+    () => parseTodoLine(editingTaskDraft).priority,
+    [editingTaskDraft]
   );
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -448,6 +827,7 @@ export default function App() {
     const raw = newTaskText.trim();
     if (!raw) return;
     setTasks((prev) => [{ id: uid(), raw }, ...prev]);
+    setCurrentPage(1);
     setNewTaskText('');
   };
 
@@ -470,6 +850,11 @@ export default function App() {
       setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, raw: trimmed } : t)));
     }
     setEditingTaskId(null);
+  };
+
+  const handleQuickPriority = (letter: PriorityKey | null) => {
+    setEditingTaskDraft((prev) => applyPriorityPrefix(prev, letter));
+    editInputRef.current?.focus();
   };
 
   const handleUndo = () => {
@@ -545,6 +930,7 @@ export default function App() {
         return [...prev, ...additions];
       });
     }
+    setCurrentPage(1);
     showToast(`Imported ${clean.length} task(s).`);
   };
 
@@ -561,8 +947,17 @@ export default function App() {
             const lines = obj.tasks.map((t: unknown) =>
               typeof t === 'string' ? t : (t as { raw: string }).raw
             );
-            if (importMode === 'replace' && Array.isArray(obj.filters) && obj.filters.length > 0) {
-              setFilters(obj.filters);
+            if (importMode === 'replace') {
+              if (Array.isArray(obj.filters) && obj.filters.length > 0) {
+                setFilters(migrateFiltersIfNeeded(obj.filters));
+              }
+              if (typeof obj.pageSize === 'number' && obj.pageSize >= 1) setPageSize(obj.pageSize);
+              if (obj.theme && THEMES[obj.theme as ThemeKey]) setTheme(obj.theme as ThemeKey);
+              if (typeof obj.boldPriorityA === 'boolean') setBoldPriorityA(obj.boldPriorityA);
+              if (typeof obj.colorizeCheckboxes === 'boolean') setColorizeCheckboxes(obj.colorizeCheckboxes);
+              if (obj.priorityColors) setPriorityColors({ ...DEFAULT_PRIORITY_COLORS, ...obj.priorityColors });
+              if (typeof obj.colorizeText === 'boolean') setColorizeText(obj.colorizeText);
+              if (obj.priorityTextColors) setPriorityTextColors({ ...DEFAULT_TEXT_COLORS, ...obj.priorityTextColors });
             }
             handleImportLines(lines, importMode);
             setBackupModalOpen(false);
@@ -591,28 +986,38 @@ export default function App() {
     }
   };
 
+  const getCheckboxColor = (parsed: ParsedTodo): string | undefined => {
+    if (!colorizeCheckboxes || !parsed.priority) return undefined;
+    return priorityColors[parsed.priority as PriorityKey];
+  };
+
+  const getTaskTextColor = (parsed: ParsedTodo): string | undefined => {
+    if (!colorizeText || parsed.completed || !parsed.priority) return undefined;
+    return priorityTextColors[parsed.priority as PriorityKey];
+  };
+
   return (
-    <div className="min-h-full bg-[#0b0d10] text-[#e6e9ef]">
+    <div className="min-h-full bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       <div className="max-w-[1100px] mx-auto min-h-screen flex flex-col px-3 py-2.5 pb-6 gap-2">
         {/* Top Bar */}
-        <header className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[#232834]">
+        <header className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[var(--border-subtle)]">
           <div className="flex items-baseline gap-2.5 min-w-0">
-            <h1 className="text-[14px] font-bold tracking-[0.02em] text-[#e6e9ef] whitespace-nowrap shrink-0">
+            <h1 className="text-[14px] font-bold tracking-[0.02em] text-[var(--text-primary)] whitespace-nowrap shrink-0">
               TODOTXT
             </h1>
-            <span className="text-[11px] text-[#8c95a6] tabular-nums whitespace-nowrap">
+            <span className="text-[11px] text-[var(--text-secondary)] tabular-nums whitespace-nowrap">
               {displayedTasks.length} shown · {openCount} open · {tasks.length} total
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => {
                 resetFilterForm();
                 setFiltersModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 h-6 px-2 text-[11px] font-medium rounded border border-[#232834] bg-[#12151b] text-[#e6e9ef] hover:bg-[#1d222c] hover:border-[#323949] transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 h-6 px-2 text-[11px] font-medium rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-strong)] transition-colors whitespace-nowrap shrink-0"
             >
               <SlidersHorizontal className="w-3 h-3" />
               <span>Customize Filters</span>
@@ -620,8 +1025,17 @@ export default function App() {
 
             <button
               type="button"
+              onClick={() => setSettingsModalOpen(true)}
+              className="inline-flex items-center gap-1.5 h-6 px-2 text-[11px] font-medium rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-strong)] transition-colors whitespace-nowrap shrink-0"
+            >
+              <Settings className="w-3 h-3" />
+              <span>Settings</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setBackupModalOpen(true)}
-              className="inline-flex items-center gap-1.5 h-6 px-2 text-[11px] font-medium rounded border border-[#232834] bg-[#12151b] text-[#e6e9ef] hover:bg-[#1d222c] hover:border-[#323949] transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 h-6 px-2 text-[11px] font-medium rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-strong)] transition-colors whitespace-nowrap shrink-0"
             >
               <Download className="w-3 h-3" />
               <span>Backup &amp; Restore</span>
@@ -633,7 +1047,7 @@ export default function App() {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-1.5">
           <form
             onSubmit={handleAddTask}
-            className="flex items-center bg-[#12151b] border border-[#232834] rounded focus-within:border-[#3b82f6] transition-colors"
+            className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded focus-within:border-[var(--accent)] transition-colors"
           >
             <input
               ref={addInputRef}
@@ -643,38 +1057,42 @@ export default function App() {
               placeholder="Add task in todo.txt format (e.g. (A) Buy milk +Home @errands due:2026-11-25)"
               aria-label="New task in todo.txt format"
               autoComplete="off"
-              className="w-full h-[30px] px-2.5 bg-transparent border-none text-[11px] text-[#e6e9ef] placeholder-[#5a6272] focus:outline-none"
+              className="w-full h-[30px] px-2.5 bg-transparent border-none text-[11px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
             />
             <button
               type="submit"
-              className="inline-flex items-center gap-1 h-[22px] px-2 mr-1 rounded text-[10px] font-semibold bg-[#3b82f6] hover:bg-[#2563eb] text-white whitespace-nowrap shrink-0 transition-colors"
+              className="inline-flex items-center gap-1 h-[22px] px-2 mr-1 rounded text-[10px] font-semibold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)] whitespace-nowrap shrink-0 transition-colors"
             >
               <Plus className="w-3 h-3" />
               <span>Add</span>
             </button>
           </form>
 
-          <div className="flex items-center bg-[#12151b] border border-[#232834] rounded focus-within:border-[#3b82f6] transition-colors">
-            <Search className="w-3 h-3 ml-2.5 text-[#5a6272] shrink-0" />
+          <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded focus-within:border-[var(--accent)] transition-colors">
+            <Search className="w-3 h-3 ml-2.5 text-[var(--text-muted)] shrink-0" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Search tasks, +project, @context... (/)"
               aria-label="Search tasks"
               autoComplete="off"
-              className="w-full h-[30px] px-2 bg-transparent border-none text-[11px] text-[#e6e9ef] placeholder-[#5a6272] focus:outline-none"
+              className="w-full h-[30px] px-2 bg-transparent border-none text-[11px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
             />
             {searchQuery.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
                   setSearchQuery('');
+                  setCurrentPage(1);
                   searchInputRef.current?.focus();
                 }}
                 aria-label="Clear search"
-                className="inline-flex items-center justify-center w-5 h-5 mr-1 rounded text-[#8c95a6] hover:bg-[#1d222c] hover:text-[#e6e9ef]"
+                className="inline-flex items-center justify-center w-5 h-5 mr-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -694,11 +1112,14 @@ export default function App() {
                   role="tab"
                   aria-selected={isActive}
                   title={f.query ? `Rule: ${f.query}` : 'Show all tasks'}
-                  onClick={() => setActiveFilterId(f.id)}
+                  onClick={() => {
+                    setActiveFilterId(f.id);
+                    setCurrentPage(1);
+                  }}
                   className={`inline-flex items-center gap-1.5 h-6 px-2 rounded text-[10px] font-medium border whitespace-nowrap transition-colors ${
                     isActive
                       ? ACTIVE_COLOR_STYLES[f.color || 'blue']
-                      : 'bg-[#12151b] border-[#232834] text-[#8c95a6] hover:bg-[#1d222c] hover:text-[#e6e9ef] hover:border-[#323949]'
+                      : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
                   }`}
                 >
                   <span>{f.label}</span>
@@ -711,9 +1132,12 @@ export default function App() {
           <div className="flex items-center gap-1 shrink-0">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortMode)}
+              onChange={(e) => {
+                setSortBy(e.target.value as SortMode);
+                setCurrentPage(1);
+              }}
               aria-label="Sort tasks"
-              className="h-6 px-1.5 text-[10px] bg-[#12151b] border border-[#232834] rounded text-[#8c95a6] cursor-pointer focus:outline-none focus:border-[#3b82f6]"
+              className="h-6 px-1.5 text-[10px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded text-[var(--text-secondary)] cursor-pointer focus:outline-none focus:border-[var(--accent)]"
             >
               <option value="priority">Sort: Priority</option>
               <option value="added">Sort: Order</option>
@@ -724,98 +1148,498 @@ export default function App() {
         </div>
 
         {/* Compact Task List (10px font-size, content-only) */}
-        <main className="bg-[#12151b] border border-[#232834] rounded-md overflow-hidden flex-1">
-          {displayedTasks.length === 0 ? (
-            <div className="py-7 px-4 text-center text-[#8c95a6] text-[11px]">
-              <p className="mb-2.5">
-                {tasks.length === 0
-                  ? 'No tasks yet. Add one above in todo.txt format.'
-                  : 'No tasks match this filter or search.'}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  if (filters.length > 0) {
-                    setFilters((prev) =>
-                      prev.map((f, idx) => (idx === 0 ? { ...f, visible: true } : f))
-                    );
-                    setActiveFilterId(filters[0].id);
-                  }
-                }}
-                className="inline-flex items-center h-6 px-2.5 text-[11px] font-medium rounded border border-[#232834] bg-[#181c24] text-[#e6e9ef] hover:bg-[#1d222c]"
-              >
-                Show All Tasks
-              </button>
-            </div>
-          ) : (
-            <ul className="divide-y divide-[#232834]/65" aria-label="Tasks">
-              {displayedTasks.map(({ task, parsed }) => (
-                <li
-                  key={task.id}
-                  className="flex items-center gap-1.5 px-1.5 py-0.5 min-h-[22px] hover:bg-[#1d222c] transition-colors"
+        <main className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-md overflow-hidden flex-1 flex flex-col justify-between">
+          <div>
+            {displayedTasks.length === 0 ? (
+              <div className="py-7 px-4 text-center text-[var(--text-secondary)] text-[11px]">
+                <p className="mb-2.5">
+                  {tasks.length === 0
+                    ? 'No tasks yet. Add one above in todo.txt format.'
+                    : 'No tasks match this filter or search.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                    if (filters.length > 0) {
+                      setFilters((prev) =>
+                        prev.map((f, idx) => (idx === 0 ? { ...f, visible: true } : f))
+                      );
+                      setActiveFilterId(filters[0].id);
+                    }
+                  }}
+                  className="inline-flex items-center h-6 px-2.5 text-[11px] font-medium rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleToggleTask(task.id)}
-                    aria-label={parsed.completed ? 'Mark incomplete' : 'Mark complete'}
-                    className={`w-3.5 h-3.5 rounded-[3px] border flex items-center justify-center shrink-0 transition-colors ${
-                      parsed.completed
-                        ? 'bg-[#22c55e] border-[#22c55e] text-[#0b0d10]'
-                        : 'border-[#323949] bg-transparent text-transparent hover:border-[#3b82f6]'
-                    }`}
-                  >
-                    {parsed.completed && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </button>
-
-                  {editingTaskId === task.id ? (
-                    <input
-                      type="text"
-                      autoFocus
-                      value={editingTaskDraft}
-                      onChange={(e) => setEditingTaskDraft(e.target.value)}
-                      onBlur={() => handleCommitEdit(task.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleCommitEdit(task.id);
-                        } else if (e.key === 'Escape') {
-                          setEditingTaskId(null);
-                        }
-                      }}
-                      aria-label="Edit raw todo.txt line"
-                      className="flex-1 min-w-0 h-5 px-1.5 text-[10px] font-mono bg-[#0b0d10] border border-[#3b82f6] rounded-[3px] text-[#e6e9ef] focus:outline-none"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingTaskId(task.id);
-                        setEditingTaskDraft(task.raw);
-                      }}
-                      title="Click to edit task"
-                      className={`flex-1 min-w-0 text-left text-[10px] leading-[1.35] tracking-[0.01em] py-0.5 break-words cursor-text ${
-                        parsed.completed ? 'text-[#5a6272] line-through' : 'text-[#e6e9ef]'
+                  Show All Tasks
+                </button>
+              </div>
+            ) : (
+              <ul className="divide-y divide-[var(--border-subtle)]" aria-label="Tasks">
+                {paginatedTasks.map(({ task, parsed }) => {
+                  const isEditing = editingTaskId === task.id;
+                  const checkboxColor = getCheckboxColor(parsed);
+                  const textColor = getTaskTextColor(parsed);
+                  const isBoldA = boldPriorityA && parsed.priority === 'A';
+                  return (
+                    <li
+                      key={task.id}
+                      className={`flex gap-1.5 px-1.5 transition-colors ${
+                        isEditing
+                          ? 'items-start py-1 bg-[var(--bg-elevated)]'
+                          : 'items-center py-0.5 min-h-[22px] hover:bg-[var(--bg-hover)]'
                       }`}
                     >
-                      {parsed.content}
-                    </button>
-                  )}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleTask(task.id)}
+                        aria-label={parsed.completed ? 'Mark incomplete' : 'Mark complete'}
+                        style={
+                          checkboxColor
+                            ? parsed.completed
+                              ? { backgroundColor: checkboxColor, borderColor: checkboxColor }
+                              : { borderColor: checkboxColor }
+                            : undefined
+                        }
+                        className={`w-3.5 h-3.5 rounded-[3px] border-[1.5px] flex items-center justify-center shrink-0 transition-colors ${
+                          isEditing ? 'mt-[3px]' : ''
+                        } ${
+                          parsed.completed
+                            ? 'bg-[#22c55e] border-[#22c55e] text-[#0b0d10]'
+                            : 'border-[var(--border-strong)] bg-transparent text-transparent hover:brightness-125'
+                        }`}
+                      >
+                        {parsed.completed && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </button>
 
+                      {isEditing ? (
+                        <div ref={editWrapRef} className="flex-1 min-w-0 flex flex-col gap-1">
+                          <input
+                            ref={editInputRef}
+                            type="text"
+                            autoFocus
+                            value={editingTaskDraft}
+                            onChange={(e) => setEditingTaskDraft(e.target.value)}
+                            onBlur={() => {
+                              setTimeout(() => {
+                                if (!editWrapRef.current?.contains(document.activeElement)) {
+                                  handleCommitEdit(task.id);
+                                }
+                              }, 0);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleCommitEdit(task.id);
+                              } else if (e.key === 'Escape') {
+                                setEditingTaskId(null);
+                              }
+                            }}
+                            aria-label="Edit raw todo.txt line"
+                            className="w-full h-[22px] px-1.5 text-[10px] font-mono bg-[var(--bg-canvas)] border border-[var(--accent)] rounded-[3px] text-[var(--text-primary)] focus:outline-none"
+                          />
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-[9px] text-[var(--text-muted)] mr-0.5">Priority:</span>
+                            {PRIORITIES.map((letter) => {
+                              const isActive = editingDraftPriority === letter;
+                              const color = priorityColors[letter];
+                              return (
+                                <button
+                                  key={letter}
+                                  type="button"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => handleQuickPriority(letter)}
+                                  title={`Set or toggle priority (${letter})`}
+                                  style={
+                                    isActive
+                                      ? { backgroundColor: color, borderColor: color, color: '#0b0d10' }
+                                      : { borderColor: color, color }
+                                  }
+                                  className="h-[18px] px-1.5 text-[9px] font-mono font-semibold rounded-[3px] border bg-[var(--bg-canvas)] transition-colors hover:brightness-110"
+                                >
+                                  ({letter})
+                                </button>
+                              );
+                            })}
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => handleQuickPriority(null)}
+                              title="Remove priority"
+                              className="h-[18px] px-1.5 text-[9px] font-mono font-semibold rounded-[3px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                            >
+                              None
+                            </button>
+
+                            <div className="ml-auto flex items-center gap-1">
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => setEditingTaskId(null)}
+                                className="h-[18px] px-1.5 text-[9px] font-medium rounded-[3px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => handleCommitEdit(task.id)}
+                                className="h-[18px] px-1.5 text-[9px] font-medium rounded-[3px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)]"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTaskId(task.id);
+                            setEditingTaskDraft(task.raw);
+                          }}
+                          title="Click to edit task"
+                          style={textColor ? { color: textColor } : undefined}
+                          className={`flex-1 min-w-0 text-left text-[10px] leading-[1.35] tracking-[0.01em] py-0.5 break-words cursor-text ${
+                            isBoldA ? 'font-bold' : ''
+                          } ${
+                            parsed.completed
+                              ? 'text-[var(--text-muted)] line-through'
+                              : 'text-[var(--text-primary)]'
+                          }`}
+                        >
+                          {parsed.content}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleRemoveTask(task.id)}
+                        aria-label="Remove task"
+                        className={`w-5 h-[18px] rounded-[3px] inline-flex items-center justify-center text-[var(--text-muted)] hover:bg-red-500/15 hover:text-red-300 shrink-0 transition-colors ${
+                          isEditing ? 'mt-[3px]' : ''
+                        }`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          {/* Classic Google-Style Pagination Bar */}
+          {displayedTasks.length > 0 && totalPages > 1 && (
+            <nav
+              aria-label="Task pages"
+              className="flex flex-wrap items-center justify-center gap-0.5 px-2.5 py-1.5 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
+            >
+              <button
+                type="button"
+                disabled={clampedPage <= 1}
+                onClick={() => {
+                  setCurrentPage((p) => Math.max(1, p - 1));
+                  setEditingTaskId(null);
+                }}
+                className="min-w-[24px] h-[22px] px-1.5 text-[11px] rounded text-[var(--accent)] hover:bg-[var(--bg-hover)] hover:underline disabled:text-[var(--text-muted)] disabled:opacity-55 disabled:no-underline"
+              >
+                &lt; Prev
+              </button>
+
+              {pageRange.map((item, idx) =>
+                item === '...' ? (
+                  <span key={`ell_${idx}`} className="text-[10px] text-[var(--text-muted)] px-1 select-none">
+                    ...
+                  </span>
+                ) : (
                   <button
+                    key={item}
                     type="button"
-                    onClick={() => handleRemoveTask(task.id)}
-                    aria-label="Remove task"
-                    className="w-5 h-[18px] rounded-[3px] inline-flex items-center justify-center text-[#5a6272] hover:bg-red-500/15 hover:text-red-300 shrink-0 transition-colors"
+                    aria-label={`Page ${item}`}
+                    aria-current={item === clampedPage ? 'page' : undefined}
+                    onClick={() => {
+                      setCurrentPage(item);
+                      setEditingTaskId(null);
+                    }}
+                    className={`min-w-[24px] h-[22px] px-1.5 text-[11px] tabular-nums rounded inline-flex items-center justify-center transition-colors ${
+                      item === clampedPage
+                        ? 'text-[var(--text-primary)] font-bold bg-[var(--accent-soft)] border border-[var(--accent)] cursor-default'
+                        : 'text-[var(--accent)] hover:bg-[var(--bg-hover)] hover:underline'
+                    }`}
                   >
-                    <X className="w-3 h-3" />
+                    {item}
                   </button>
-                </li>
-              ))}
-            </ul>
+                )
+              )}
+
+              <button
+                type="button"
+                disabled={clampedPage >= totalPages}
+                onClick={() => {
+                  setCurrentPage((p) => Math.min(totalPages, p + 1));
+                  setEditingTaskId(null);
+                }}
+                className="min-w-[24px] h-[22px] px-1.5 text-[11px] rounded text-[var(--accent)] hover:bg-[var(--bg-hover)] hover:underline disabled:text-[var(--text-muted)] disabled:opacity-55 disabled:no-underline"
+              >
+                Next &gt;
+              </button>
+
+              <span className="text-[10px] text-[var(--text-muted)] ml-2 tabular-nums whitespace-nowrap">
+                Page {clampedPage} of {totalPages}
+              </span>
+            </nav>
           )}
         </main>
       </div>
+
+      {/* Settings Modal */}
+      {settingsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settings-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSettingsModalOpen(false);
+          }}
+        >
+          <div className="w-full max-w-[540px] max-h-[88vh] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-4 flex flex-col gap-3.5">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border-subtle)]">
+              <h2 id="settings-modal-title" className="text-[13px] font-semibold">
+                Settings
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSettingsModalOpen(false)}
+                aria-label="Close"
+                className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Theme Section */}
+            <div className="flex flex-col gap-2">
+              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Theme</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {(Object.keys(THEMES) as ThemeKey[]).map((key) => {
+                  const t = THEMES[key];
+                  const isSelected = theme === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setTheme(key)}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded border text-[11px] text-left transition-colors ${
+                        isSelected
+                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] font-semibold'
+                          : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      <span className="inline-flex items-center shrink-0">
+                        <span
+                          className="w-3 h-3 rounded-l-[3px] border border-white/15"
+                          style={{ backgroundColor: t.bgSurface }}
+                        />
+                        <span
+                          className="w-2.5 h-3 rounded-r-[3px]"
+                          style={{ backgroundColor: t.accent }}
+                        />
+                      </span>
+                      <span>{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="h-px bg-[var(--border-subtle)]" />
+
+            {/* Pagination Section */}
+            <div className="flex flex-col gap-2">
+              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Pagination</div>
+              <div className="flex items-center justify-between gap-3 px-2.5 py-2 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <label htmlFor="page-size-input" className="text-[11px] font-semibold text-[var(--text-primary)]">
+                    Tasks per page
+                  </label>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    Number of tasks shown on each page (default: 10).
+                  </span>
+                </div>
+                <input
+                  id="page-size-input"
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={pageSize}
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    if (!isNaN(n) && n >= 1) {
+                      setPageSize(Math.min(500, n));
+                      setCurrentPage(1);
+                    }
+                  }}
+                  className="w-[72px] h-[26px] px-2 text-center text-[11px] tabular-nums bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+            </div>
+
+            <div className="h-px bg-[var(--border-subtle)]" />
+
+            {/* Checkbox Priority Colors */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[var(--text-secondary)]">
+                  Checkbox Priority Colors (A–F)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPriorityColors({ ...DEFAULT_PRIORITY_COLORS });
+                    setColorizeCheckboxes(true);
+                  }}
+                  className="h-6 px-2 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]"
+                >
+                  Reset Colors
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 px-2.5 py-2 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <label htmlFor="colorize-checkboxes-toggle" className="text-[11px] font-semibold text-[var(--text-primary)]">
+                    Color checkboxes by priority
+                  </label>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    Tint task checkboxes based on (A) through (F) priority.
+                  </span>
+                </div>
+                <input
+                  id="colorize-checkboxes-toggle"
+                  type="checkbox"
+                  checked={colorizeCheckboxes}
+                  onChange={(e) => setColorizeCheckboxes(e.target.checked)}
+                  className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {PRIORITIES.map((letter) => (
+                  <div
+                    key={letter}
+                    className="flex items-center justify-between gap-2 px-2 py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded text-[11px]"
+                  >
+                    <span>
+                      Priority <strong>({letter})</strong>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] text-[var(--text-secondary)] w-[56px]">
+                        {priorityColors[letter]}
+                      </span>
+                      <input
+                        type="color"
+                        value={priorityColors[letter]}
+                        onChange={(e) =>
+                          setPriorityColors((prev) => ({ ...prev, [letter]: e.target.value }))
+                        }
+                        aria-label={`Priority ${letter} checkbox color`}
+                        className="w-[26px] h-[22px] p-0 border border-[var(--border-strong)] rounded bg-transparent cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-px bg-[var(--border-subtle)]" />
+
+            {/* Priority Font Colors (A-F) */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[var(--text-secondary)]">
+                  Priority Font Colors (A–F)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPriorityTextColors({ ...DEFAULT_TEXT_COLORS });
+                    setColorizeText(true);
+                    setBoldPriorityA(true);
+                  }}
+                  className="h-6 px-2 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]"
+                >
+                  Reset Font Colors
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 px-2.5 py-2 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <label htmlFor="bold-priority-a-toggle" className="text-[11px] font-semibold text-[var(--text-primary)]">
+                    Bold (A) priority tasks
+                  </label>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    Render priority (A) task text in bold by default.
+                  </span>
+                </div>
+                <input
+                  id="bold-priority-a-toggle"
+                  type="checkbox"
+                  checked={boldPriorityA}
+                  onChange={(e) => setBoldPriorityA(e.target.checked)}
+                  className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 px-2.5 py-2 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <label htmlFor="colorize-text-toggle" className="text-[11px] font-semibold text-[var(--text-primary)]">
+                    Color task text by priority
+                  </label>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    Apply custom font colors to priorities (A) through (F).
+                  </span>
+                </div>
+                <input
+                  id="colorize-text-toggle"
+                  type="checkbox"
+                  checked={colorizeText}
+                  onChange={(e) => setColorizeText(e.target.checked)}
+                  className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {PRIORITIES.map((letter) => (
+                  <div
+                    key={letter}
+                    className="flex items-center justify-between gap-2 px-2 py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded text-[11px]"
+                  >
+                    <span>
+                      Priority <strong>({letter})</strong>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] text-[var(--text-secondary)] w-[56px]">
+                        {priorityTextColors[letter]}
+                      </span>
+                      <input
+                        type="color"
+                        value={priorityTextColors[letter]}
+                        onChange={(e) =>
+                          setPriorityTextColors((prev) => ({ ...prev, [letter]: e.target.value }))
+                        }
+                        aria-label={`Priority ${letter} font color`}
+                        className="w-[26px] h-[22px] p-0 border border-[var(--border-strong)] rounded bg-transparent cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Customize Filters Modal */}
       {filtersModalOpen && (
@@ -828,8 +1652,8 @@ export default function App() {
             if (e.target === e.currentTarget) setFiltersModalOpen(false);
           }}
         >
-          <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto bg-[#12151b] border border-[#323949] rounded-lg p-4 flex flex-col gap-3.5">
-            <div className="flex items-center justify-between pb-2.5 border-b border-[#232834]">
+          <div className="w-full max-w-[540px] max-h-[88vh] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-4 flex flex-col gap-3.5">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border-subtle)]">
               <h2 id="filters-modal-title" className="text-[13px] font-semibold">
                 Customize Filter Buttons
               </h2>
@@ -837,14 +1661,14 @@ export default function App() {
                 type="button"
                 onClick={() => setFiltersModalOpen(false)}
                 aria-label="Close"
-                className="w-6 h-6 inline-flex items-center justify-center rounded border border-[#232834] text-[#8c95a6] hover:bg-[#1d222c] hover:text-white"
+                className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveFilter} className="flex flex-col gap-2">
-              <div className="text-[11px] font-medium text-[#8c95a6]">
+              <div className="text-[11px] font-medium text-[var(--text-secondary)]">
                 {editingFilterId ? 'Edit Filter Button' : 'Add Custom Filter Button'}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -855,7 +1679,7 @@ export default function App() {
                   placeholder="Button label (e.g. Work)"
                   maxLength={24}
                   required
-                  className="w-full bg-[#0b0d10] border border-[#232834] rounded px-2 py-1.5 text-[11px] text-[#e6e9ef] focus:outline-none focus:border-[#3b82f6]"
+                  className="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded px-2 py-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                 />
                 <input
                   type="text"
@@ -863,7 +1687,7 @@ export default function App() {
                   onChange={(e) => setFilterQueryInput(e.target.value)}
                   placeholder="Rule (e.g. +Work is:open)"
                   required
-                  className="w-full bg-[#0b0d10] border border-[#232834] rounded px-2 py-1.5 text-[11px] text-[#e6e9ef] focus:outline-none focus:border-[#3b82f6]"
+                  className="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded px-2 py-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
@@ -871,7 +1695,7 @@ export default function App() {
                   value={filterColorInput}
                   onChange={(e) => setFilterColorInput(e.target.value as FilterColor)}
                   aria-label="Button accent color"
-                  className="w-full bg-[#0b0d10] border border-[#232834] rounded px-2 py-1.5 text-[11px] text-[#e6e9ef] focus:outline-none focus:border-[#3b82f6]"
+                  className="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded px-2 py-1.5 text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                 >
                   <option value="blue">Accent: Blue</option>
                   <option value="amber">Accent: Amber</option>
@@ -885,42 +1709,43 @@ export default function App() {
                     <button
                       type="button"
                       onClick={resetFilterForm}
-                      className="h-6 px-2.5 text-[11px] rounded border border-[#232834] bg-[#181c24] hover:bg-[#1d222c]"
+                      className="h-6 px-2.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]"
                     >
                       Cancel
                     </button>
                   )}
                   <button
                     type="submit"
-                    className="h-6 px-3 text-[11px] font-medium rounded bg-[#3b82f6] hover:bg-[#2563eb] text-white"
+                    className="h-6 px-3 text-[11px] font-medium rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)]"
                   >
                     {editingFilterId ? 'Update Button' : 'Add Button'}
                   </button>
                 </div>
               </div>
-              <p className="text-[10px] text-[#5a6272] leading-relaxed">
-                Query syntax: combine tokens with spaces (AND) or <code className="text-[#8c95a6]">OR</code>. Supports{' '}
-                <code className="text-[#8c95a6]">+project</code>, <code className="text-[#8c95a6]">@context</code>,{' '}
-                <code className="text-[#8c95a6]">(A)</code> or <code className="text-[#8c95a6]">(A-B)</code>,{' '}
-                <code className="text-[#8c95a6]">is:open</code>, <code className="text-[#8c95a6]">is:done</code>,{' '}
-                <code className="text-[#8c95a6]">due:today</code>, <code className="text-[#8c95a6]">due:overdue</code>, negation{' '}
-                <code className="text-[#8c95a6]">-@waiting</code>, or plain text.
+              <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                Query syntax: combine tokens with spaces (AND) or <code className="text-[var(--text-secondary)]">OR</code>. Supports{' '}
+                <code className="text-[var(--text-secondary)]">+project</code>, <code className="text-[var(--text-secondary)]">@context</code>,{' '}
+                <code className="text-[var(--text-secondary)]">(A)</code> or <code className="text-[var(--text-secondary)]">(A-B)</code>,{' '}
+                <code className="text-[var(--text-secondary)]">is:open</code>, <code className="text-[var(--text-secondary)]">is:done</code>,{' '}
+                <code className="text-[var(--text-secondary)]">due:today</code>, <code className="text-[var(--text-secondary)]">due:overdue</code>, negation{' '}
+                <code className="text-[var(--text-secondary)]">-@waiting</code>, or plain text.
               </p>
             </form>
 
-            <div className="h-px bg-[#232834]" />
+            <div className="h-px bg-[var(--border-subtle)]" />
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-[#8c95a6]">Active Filter Buttons</span>
+                <span className="text-[11px] font-medium text-[var(--text-secondary)]">Active Filter Buttons</span>
                 <button
                   type="button"
                   onClick={() => {
                     setFilters(DEFAULT_FILTERS);
                     setActiveFilterId('f_all');
+                    setCurrentPage(1);
                     resetFilterForm();
                   }}
-                  className="h-6 px-2 text-[11px] rounded border border-[#232834] bg-[#181c24] hover:bg-[#1d222c]"
+                  className="h-6 px-2 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]"
                 >
                   Reset Defaults
                 </button>
@@ -930,14 +1755,14 @@ export default function App() {
                 {filters.map((f, index) => (
                   <div
                     key={f.id}
-                    className="flex items-center justify-between gap-2 px-2 py-1.5 bg-[#0b0d10] border border-[#232834] rounded"
+                    className="flex items-center justify-between gap-2 px-2 py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-[11px] font-semibold text-[#e6e9ef]">
+                      <div className="text-[11px] font-semibold text-[var(--text-primary)]">
                         {f.label}
                         {f.visible === false ? ' (Hidden)' : ''}
                       </div>
-                      <div className="text-[10px] font-mono text-[#5a6272] truncate">
+                      <div className="text-[10px] font-mono text-[var(--text-muted)] truncate">
                         {f.query || '(shows all tasks)'}
                       </div>
                     </div>
@@ -948,7 +1773,7 @@ export default function App() {
                         disabled={index === 0}
                         onClick={() => handleMoveFilterUp(index)}
                         title="Move up"
-                        className="w-6 h-6 inline-flex items-center justify-center rounded border border-[#232834] bg-[#12151b] hover:bg-[#1d222c] disabled:opacity-40"
+                        className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] disabled:opacity-40"
                       >
                         <ArrowUp className="w-3 h-3" />
                       </button>
@@ -961,7 +1786,7 @@ export default function App() {
                             )
                           )
                         }
-                        className="h-6 px-2 text-[10px] rounded border border-[#232834] bg-[#12151b] hover:bg-[#1d222c]"
+                        className="h-6 px-2 text-[10px] rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)]"
                       >
                         {f.visible === false ? 'Show' : 'Hide'}
                       </button>
@@ -974,7 +1799,7 @@ export default function App() {
                           setFilterColorInput(f.color || 'blue');
                         }}
                         aria-label={`Edit ${f.label}`}
-                        className="w-6 h-6 inline-flex items-center justify-center rounded border border-[#232834] bg-[#12151b] hover:bg-[#1d222c]"
+                        className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)]"
                       >
                         <Pencil className="w-3 h-3" />
                       </button>
@@ -1013,8 +1838,8 @@ export default function App() {
             if (e.target === e.currentTarget) setBackupModalOpen(false);
           }}
         >
-          <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto bg-[#12151b] border border-[#323949] rounded-lg p-4 flex flex-col gap-3.5">
-            <div className="flex items-center justify-between pb-2.5 border-b border-[#232834]">
+          <div className="w-full max-w-[540px] max-h-[88vh] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-4 flex flex-col gap-3.5">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border-subtle)]">
               <h2 id="backup-modal-title" className="text-[13px] font-semibold">
                 Local Backup &amp; Restore
               </h2>
@@ -1022,14 +1847,14 @@ export default function App() {
                 type="button"
                 onClick={() => setBackupModalOpen(false)}
                 aria-label="Close"
-                className="w-6 h-6 inline-flex items-center justify-center rounded border border-[#232834] text-[#8c95a6] hover:bg-[#1d222c] hover:text-white"
+                className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="text-[11px] font-medium text-[#8c95a6]">Export Data &amp; Offline App</div>
+              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Export Data &amp; Offline App</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 <button
                   type="button"
@@ -1038,7 +1863,7 @@ export default function App() {
                     downloadBlob(`todo_${todayISO()}.txt`, content, 'text/plain;charset=utf-8');
                     showToast('Exported todo.txt');
                   }}
-                  className="h-7 px-2.5 text-[11px] rounded border border-[#232834] bg-[#181c24] hover:bg-[#1d222c] inline-flex items-center justify-center gap-1.5"
+                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] inline-flex items-center justify-center gap-1.5"
                 >
                   <FileDown className="w-3 h-3" />
                   <span>Export todo.txt</span>
@@ -1053,6 +1878,13 @@ export default function App() {
                         tasks,
                         filters,
                         sortBy,
+                        pageSize,
+                        theme,
+                        boldPriorityA,
+                        colorizeCheckboxes,
+                        priorityColors,
+                        colorizeText,
+                        priorityTextColors,
                       },
                       null,
                       2
@@ -1064,7 +1896,7 @@ export default function App() {
                     );
                     showToast('Exported full JSON backup');
                   }}
-                  className="h-7 px-2.5 text-[11px] rounded border border-[#232834] bg-[#181c24] hover:bg-[#1d222c] inline-flex items-center justify-center gap-1.5"
+                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] inline-flex items-center justify-center gap-1.5"
                 >
                   <Download className="w-3 h-3" />
                   <span>Export Full JSON</span>
@@ -1081,32 +1913,32 @@ export default function App() {
                       showToast('Lines placed in text area below');
                     }
                   }}
-                  className="h-7 px-2.5 text-[11px] rounded border border-[#232834] bg-[#181c24] hover:bg-[#1d222c]"
+                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)]"
                 >
                   Copy todo.txt
                 </button>
                 <button
                   type="button"
                   onClick={handleDownloadStandaloneHtml}
-                  className="h-7 px-2.5 text-[11px] rounded border border-[#3b82f6]/40 bg-[#3b82f6]/10 text-blue-300 hover:bg-[#3b82f6]/20"
+                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] hover:brightness-110"
                 >
                   Download Offline TODOTXT.html
                 </button>
               </div>
-              <p className="text-[10px] text-[#5a6272] leading-relaxed">
-                <code className="text-[#8c95a6]">todo.txt</code> exports standard plain-text lines. Full JSON includes tasks and custom filter buttons. You can also download the standalone zero-dependency <code className="text-[#8c95a6]">TODOTXT.html</code> file for completely offline use.
+              <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                <code className="text-[var(--text-secondary)]">todo.txt</code> exports standard plain-text lines. Full JSON includes tasks, custom filter buttons, and settings. You can also download the standalone zero-dependency <code className="text-[var(--text-secondary)]">TODOTXT.html</code> file for completely offline use.
               </p>
             </div>
 
-            <div className="h-px bg-[#232834]" />
+            <div className="h-px bg-[var(--border-subtle)]" />
 
             <div className="flex flex-col gap-2">
-              <div className="text-[11px] font-medium text-[#8c95a6]">Restore / Import</div>
+              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Restore / Import</div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-6 px-2.5 text-[11px] rounded border border-[#232834] bg-[#181c24] hover:bg-[#1d222c] inline-flex items-center gap-1.5"
+                  className="h-6 px-2.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] inline-flex items-center gap-1.5"
                 >
                   <Upload className="w-3 h-3" />
                   <span>Import .txt or .json File</span>
@@ -1122,7 +1954,7 @@ export default function App() {
                   value={importMode}
                   onChange={(e) => setImportMode(e.target.value as ImportMode)}
                   aria-label="Import mode"
-                  className="h-6 px-2 text-[10px] bg-[#0b0d10] border border-[#232834] rounded text-[#8c95a6]"
+                  className="h-6 px-2 text-[10px] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded text-[var(--text-secondary)]"
                 >
                   <option value="merge">Mode: Merge unique</option>
                   <option value="replace">Mode: Replace all</option>
@@ -1133,7 +1965,7 @@ export default function App() {
                 value={pasteImportText}
                 onChange={(e) => setPasteImportText(e.target.value)}
                 placeholder="Or paste raw todo.txt lines here (one task per line)..."
-                className="w-full min-h-[96px] bg-[#0b0d10] border border-[#232834] rounded p-2 text-[10px] font-mono text-[#e6e9ef] resize-y focus:outline-none focus:border-[#3b82f6]"
+                className="w-full min-h-[96px] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2 text-[10px] font-mono text-[var(--text-primary)] resize-y focus:outline-none focus:border-[var(--accent)]"
               />
 
               <div className="flex items-center justify-between gap-2">
@@ -1164,7 +1996,7 @@ export default function App() {
                     setPasteImportText('');
                     setBackupModalOpen(false);
                   }}
-                  className="h-6 px-3 text-[11px] font-medium rounded bg-[#3b82f6] hover:bg-[#2563eb] text-white"
+                  className="h-6 px-3 text-[11px] font-medium rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-fg)]"
                 >
                   Import Pasted Lines
                 </button>
@@ -1179,14 +2011,14 @@ export default function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-3.5 right-3.5 z-[100] bg-[#181c24] border border-[#323949] rounded-md px-2.5 py-1.5 text-[11px] text-[#e6e9ef] flex items-center gap-2.5 shadow-xl"
+          className="fixed bottom-3.5 right-3.5 z-[100] bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-md px-2.5 py-1.5 text-[11px] text-[var(--text-primary)] flex items-center gap-2.5 shadow-xl"
         >
           <span>{toast.message}</span>
           {toast.canUndo && (
             <button
               type="button"
               onClick={handleUndo}
-              className="text-[#3b82f6] font-semibold hover:underline"
+              className="text-[var(--accent)] font-semibold hover:underline"
             >
               Undo
             </button>
