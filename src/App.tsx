@@ -1125,15 +1125,15 @@ export default function App() {
     e.target.value = '';
   };
 
-  const handleDownloadStandaloneHtml = async () => {
+  const handleDownloadStandaloneHtml = async (filename: 'TODOTXT.html' | 'TODOTXT-localfile.html') => {
     try {
-      const res = await fetch('/TODOTXT.html');
+      const res = await fetch(`/${filename}`);
       if (!res.ok) throw new Error('Fetch failed');
       const html = await res.text();
-      downloadBlob('TODOTXT.html', html, 'text/html;charset=utf-8');
-      showToast('Downloaded offline TODOTXT.html');
+      downloadBlob(filename, html, 'text/html;charset=utf-8');
+      showToast(`Downloaded ${filename}`);
     } catch {
-      showToast('Unable to download TODOTXT.html');
+      showToast(`Unable to download ${filename}`);
     }
   };
 
@@ -1156,6 +1156,9 @@ export default function App() {
             <h1 className="text-[14px] font-bold tracking-[0.02em] text-[var(--text-primary)] whitespace-nowrap shrink-0">
               TODOTXT
             </h1>
+            <span className="text-[10px] font-semibold text-[var(--text-muted)] whitespace-nowrap shrink-0">
+              Cache Version
+            </span>
             <span className="text-[11px] text-[var(--text-secondary)] tabular-nums whitespace-nowrap">
               {displayedTasks.length} shown · {openCount} open · {tasks.length} total
             </span>
@@ -2376,13 +2379,22 @@ export default function App() {
                   Copy todo.txt
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={handleDownloadStandaloneHtml}
-                className="h-7 px-2.5 text-[11px] rounded border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] hover:brightness-110"
-              >
-                Download Offline TODOTXT.html
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadStandaloneHtml('TODOTXT.html')}
+                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                >
+                  Download Cache Version (TODOTXT.html)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownloadStandaloneHtml('TODOTXT-localfile.html')}
+                  className="h-7 px-2.5 text-[11px] rounded border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] hover:brightness-110"
+                >
+                  Download Local File Version (TODOTXT-localfile.html)
+                </button>
+              </div>
               <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
                 <strong className="text-[var(--text-secondary)]">Full Backup (.json)</strong> saves all tasks, custom filter views, theme, pagination, and priority colors. <strong className="text-[var(--text-secondary)]">Settings &amp; Views (.json)</strong> exports only your custom views and settings.
               </p>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>TODOTXT — Compact Offline Task Manager</title>
+  <title>TODOTXT (Cache Version) — Compact Offline Task Manager</title>
   <style>
     :root {
       --bg-canvas: #0b0d10;
@@ -98,6 +98,13 @@
       font-weight: 700;
       letter-spacing: 0.02em;
       color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .version-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
       white-space: nowrap;
     }
 
@@ -1162,6 +1169,7 @@
     <header class="topbar">
       <div class="brand-group">
         <h1 class="brand-title">TODOTXT</h1>
+        <span class="version-label">Cache Version</span>
         <span class="task-summary" id="taskSummary">0 tasks</span>
       </div>
       <div class="topbar-actions">

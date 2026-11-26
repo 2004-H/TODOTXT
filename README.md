@@ -1,12 +1,22 @@
 # TODOTXT
 
-A clean, minimalist, dark-mode `todo.txt` task manager designed for maximum information density and offline-first reliability. Available as a zero-dependency standalone single-file HTML application (`TODOTXT.html`) as well as a Vite + React web preview.
+A clean, minimalist, dark-mode `todo.txt` task manager designed for maximum information density and offline-first reliability. Available in two zero-dependency standalone single-file HTML editions—**Cache Version** (`TODOTXT.html`) and **Local File Version** (`TODOTXT-localfile.html`)—as well as a Vite + React web preview.
+
+## Editions
+
+- **Cache Version (`TODOTXT.html`)**
+  - Stores and persists all tasks, settings, and custom filter views locally in browser `localStorage`.
+  - Ideal when you want instant zero-setup offline persistence inside your browser cache.
+
+- **Local File Version (`TODOTXT-localfile.html`)**
+  - Connects directly to a local `.txt` file on your computer (such as `todo.txt`) instead of caching tasks in `localStorage`.
+  - **Real-Time Two-Way Sync**: Writes every task change directly to disk via the File System Access API and automatically detects external edits to your `todo.txt` file on focus or background polling, with one-click **Reconnect** across sessions and a manual **Load / Save `todo.txt`** fallback for browsers without File System Access API support.
 
 ## Features
 
-- **100% Offline Single-File App (`TODOTXT.html`)**
-  - All HTML, CSS, and JavaScript live inside a single `TODOTXT.html` file with zero external dependencies or network requests.
-  - Can be opened directly from your filesystem (`file://`) on desktop or mobile, or downloaded from **Backup & Restore → Download Offline TODOTXT.html**.
+- **100% Offline Single-File Apps (`TODOTXT.html` & `TODOTXT-localfile.html`)**
+  - All HTML, CSS, and JavaScript live inside standalone single HTML files with zero external dependencies or network requests.
+  - Open either file directly in your browser or download them from **Backup & Restore** in the web app.
 
 - **Compact Dark-Mode Design (`10px` Task Rows) & Bottom Add Bar**
   - Ultra-compact dark interface with `10px` task typography and tight row spacing to maximize how many tasks fit on screen at once.
@@ -62,12 +72,13 @@ A clean, minimalist, dark-mode `todo.txt` task manager designed for maximum info
 
 ## Usage
 
-### Standalone Offline File
-1. Open `TODOTXT.html` directly in any modern web browser.
-2. Add tasks using `todo.txt` syntax, for example:
-   ```text
-   (A) 2026-11-22 Finalize quarterly review +Work @office due:2026-11-25
-   ```
+### Standalone Offline Files
+- **Cache Version**: Open `TODOTXT.html` directly in any modern web browser; tasks persist automatically in browser `localStorage`.
+- **Local File Version**: Open `TODOTXT-localfile.html` in Chromium-based browsers (Chrome, Edge, Brave), click **Open `todo.txt`** or **New `todo.txt`**, and grant read/write access so every edit stays synced with your local `.txt` file.
+- Add tasks using `todo.txt` syntax, for example:
+  ```text
+  (A) 2026-11-22 Finalize quarterly review +Work @office due:2026-11-25
+  ```
 
 ### Development Web Preview
 ```bash

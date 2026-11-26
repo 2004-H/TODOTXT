@@ -1,0 +1,3789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>TODOTXT (Local File Version) — Compact Task Manager</title>
+  <style>
+    :root {
+      --bg-canvas: #0b0d10;
+      --bg-surface: #12151b;
+      --bg-elevated: #181c24;
+      --bg-hover: #1d222c;
+      --border-subtle: #232834;
+      --border-strong: #323949;
+      --text-primary: #e6e9ef;
+      --text-secondary: #8c95a6;
+      --text-muted: #5a6272;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-soft: rgba(59, 130, 246, 0.14);
+      --accent-fg: #ffffff;
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.14);
+      --success: #22c55e;
+      --amber: #f59e0b;
+      --violet: #a855f7;
+      --rose: #f43f5e;
+      --sky: #0ea5e9;
+      --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.4;
+    }
+
+    button, input, textarea, select {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .app-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 10px 12px 16px;
+      gap: 8px;
+    }
+
+    /* Top Header */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .version-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .task-summary {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* Local File Connection & Sync Bar */
+    .file-sync-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 8px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      flex-wrap: wrap;
+    }
+
+    .file-sync-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .file-sync-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 260px;
+    }
+
+    .file-sync-status {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .file-sync-status.synced {
+      color: var(--success);
+    }
+
+    .file-sync-status.warn {
+      color: var(--amber);
+    }
+
+    .file-sync-status.error {
+      color: #fca5a5;
+    }
+
+    .file-sync-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .empty-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 28px;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 5px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      white-space: nowrap;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      background-color: var(--bg-hover);
+      border-color: var(--border-strong);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-danger {
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.35);
+      background-color: rgba(239, 68, 68, 0.08);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.55);
+    }
+
+    .btn-sm {
+      height: 24px;
+      padding: 0 8px;
+      font-size: 11px;
+    }
+
+    .btn-icon {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+    }
+
+    /* Search & Bottom Add Bar */
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      transition: border-color 0.15s ease;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--accent);
+    }
+
+    .text-input {
+      width: 100%;
+      height: 30px;
+      padding: 0 10px;
+      background: transparent;
+      border: none;
+      font-size: 11px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-action-btn {
+      height: 22px;
+      padding: 0 8px;
+      margin-right: 4px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background-color: var(--accent);
+      color: var(--accent-fg);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .input-action-btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .clear-search-btn {
+      height: 20px;
+      width: 20px;
+      margin-right: 4px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .clear-search-btn.visible {
+      display: inline-flex;
+    }
+
+    .clear-search-btn:hover {
+      background-color: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    /* Filter Bar */
+    .filter-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-buttons-scroll {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 24px;
+      padding: 0 8px;
+      font-size: 10px;
+      font-weight: 500;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface);
+      color: var(--text-secondary);
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      background-color: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .filter-btn.active {
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .filter-btn[data-color="amber"].active {
+      background-color: rgba(245, 158, 11, 0.16);
+      border-color: var(--amber);
+    }
+
+    .filter-btn[data-color="emerald"].active {
+      background-color: rgba(34, 197, 94, 0.16);
+      border-color: var(--success);
+    }
+
+    .filter-btn[data-color="rose"].active {
+      background-color: rgba(244, 63, 94, 0.16);
+      border-color: var(--rose);
+    }
+
+    .filter-btn[data-color="violet"].active {
+      background-color: rgba(168, 85, 247, 0.16);
+      border-color: var(--violet);
+    }
+
+    .filter-btn[data-color="sky"].active {
+      background-color: rgba(14, 165, 233, 0.16);
+      border-color: var(--sky);
+    }
+
+    .filter-count {
+      font-variant-numeric: tabular-nums;
+      opacity: 0.7;
+      font-size: 9px;
+    }
+
+    .filter-tools {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .select-compact {
+      height: 24px;
+      padding: 0 6px;
+      font-size: 10px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    /* Ultra-Compact Task List (10px font-size) */
+    .task-list-container {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      overflow: hidden;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .task-list {
+      list-style: none;
+    }
+
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 6px;
+      min-height: 22px;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background-color 0.1s ease;
+    }
+
+    .task-row:last-child {
+      border-bottom: none;
+    }
+
+    .task-row:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .task-row.editing {
+      align-items: flex-start;
+      padding-top: 4px;
+      padding-bottom: 4px;
+      background-color: var(--bg-elevated);
+    }
+
+    .task-row.editing .task-check-btn,
+    .task-row.editing .task-remove-btn {
+      margin-top: 3px;
+    }
+
+    .task-check-btn {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1.5px solid var(--border-strong);
+      background-color: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: transparent;
+      font-size: 9px;
+      line-height: 1;
+      transition: all 0.12s ease;
+    }
+
+    .task-check-btn:hover {
+      filter: brightness(1.2);
+    }
+
+    .task-row.completed .task-check-btn {
+      background-color: var(--success);
+      border-color: var(--success);
+      color: #0b0d10;
+      font-weight: 700;
+    }
+
+    .task-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 3px 6px;
+      padding: 2px 0;
+      cursor: text;
+    }
+
+    .task-content {
+      font-size: 10px;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      color: var(--text-primary);
+      cursor: text;
+      word-break: break-word;
+      text-align: left;
+    }
+
+    .task-content.priority-a {
+      font-weight: 700;
+    }
+
+    .task-row.completed .task-content {
+      color: var(--text-muted) !important;
+      text-decoration: line-through;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+    }
+
+    .tag-pill.tag-project {
+      background-color: rgba(14, 165, 233, 0.12);
+      border-color: rgba(14, 165, 233, 0.32);
+      color: #7dd3fc;
+    }
+
+    .tag-pill.tag-project:hover {
+      background-color: rgba(14, 165, 233, 0.25);
+      border-color: rgba(56, 189, 248, 0.6);
+    }
+
+    .tag-pill.tag-project.active {
+      background-color: rgba(14, 165, 233, 0.32);
+      border-color: #38bdf8;
+      color: #e0f2fe;
+      font-weight: 600;
+    }
+
+    .tag-pill.tag-context {
+      background-color: rgba(139, 92, 246, 0.12);
+      border-color: rgba(139, 92, 246, 0.32);
+      color: #c4b5fd;
+    }
+
+    .tag-pill.tag-context:hover {
+      background-color: rgba(139, 92, 246, 0.25);
+      border-color: rgba(167, 139, 250, 0.6);
+    }
+
+    .tag-pill.tag-context.active {
+      background-color: rgba(139, 92, 246, 0.32);
+      border-color: #a78bfa;
+      color: #ede9fe;
+      font-weight: 600;
+    }
+
+    .task-row.completed .tag-pill:not(.active) {
+      opacity: 0.6;
+    }
+
+    .task-row.completed .tag-pill:hover {
+      opacity: 1;
+    }
+
+    .active-tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: background-color 0.12s ease;
+    }
+
+    .active-tag-chip.project {
+      background-color: rgba(14, 165, 233, 0.2);
+      border-color: rgba(56, 189, 248, 0.6);
+      color: #bae6fd;
+    }
+
+    .active-tag-chip.project:hover {
+      background-color: rgba(14, 165, 233, 0.3);
+    }
+
+    .active-tag-chip.context {
+      background-color: rgba(139, 92, 246, 0.2);
+      border-color: rgba(167, 139, 250, 0.6);
+      color: #ddd6fe;
+    }
+
+    .active-tag-chip.context:hover {
+      background-color: rgba(139, 92, 246, 0.3);
+    }
+
+    .task-edit-wrap {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .task-edit-input {
+      width: 100%;
+      height: 22px;
+      padding: 0 6px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .priority-quick-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .priority-quick-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-right: 2px;
+    }
+
+    .priority-quick-btn {
+      height: 18px;
+      padding: 0 6px;
+      font-size: 9px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      border-radius: 3px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-canvas);
+      color: var(--text-secondary);
+      transition: all 0.12s ease;
+    }
+
+    .priority-quick-btn:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+      background-color: var(--bg-hover);
+    }
+
+    .priority-quick-btn.active {
+      color: #0b0d10;
+      font-weight: 700;
+    }
+
+    .task-edit-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .task-edit-action-btn {
+      height: 18px;
+      padding: 0 6px;
+      font-size: 9px;
+      font-weight: 500;
+      border-radius: 3px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface);
+      color: var(--text-secondary);
+    }
+
+    .task-edit-action-btn.save {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    .task-remove-btn {
+      width: 20px;
+      height: 18px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .task-remove-btn:hover {
+      background-color: var(--danger-soft);
+      color: #fca5a5;
+    }
+
+    @media (pointer: coarse) {
+      .task-row {
+        min-height: 28px;
+        padding: 3px 6px;
+      }
+      .task-check-btn {
+        width: 18px;
+        height: 18px;
+      }
+      .task-remove-btn {
+        width: 26px;
+        height: 24px;
+        font-size: 15px;
+      }
+    }
+
+    .empty-state {
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    .empty-state p {
+      margin-bottom: 10px;
+    }
+
+    /* Classic Google-style Pagination Bar */
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 7px 10px;
+      border-top: 1px solid var(--border-subtle);
+      background-color: var(--bg-elevated);
+      flex-wrap: wrap;
+    }
+
+    .page-btn {
+      min-width: 24px;
+      height: 22px;
+      padding: 0 6px;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      border-radius: 4px;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .page-btn:hover:not(:disabled):not(.active) {
+      background-color: var(--bg-hover);
+      text-decoration: underline;
+    }
+
+    .page-btn.active {
+      color: var(--text-primary);
+      font-weight: 700;
+      background-color: var(--accent-soft);
+      border: 1px solid var(--accent);
+      cursor: default;
+    }
+
+    .page-btn:disabled {
+      color: var(--text-muted);
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .page-ellipsis {
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 0 4px;
+      user-select: none;
+    }
+
+    .page-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-left: 8px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* Bottom Add Bar */
+    .bottom-add-bar {
+      position: sticky;
+      bottom: 8px;
+      z-index: 10;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(5, 7, 10, 0.76);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 560px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-wide {
+      max-width: 760px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .modal-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .modal-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .modal-help {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 500px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field-input, .field-select, .field-textarea {
+      width: 100%;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      padding: 6px 8px;
+      font-size: 11px;
+      color: var(--text-primary);
+    }
+
+    .field-textarea {
+      min-height: 96px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      resize: vertical;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+    }
+
+    .setting-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .setting-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .setting-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .setting-number-input {
+      width: 72px;
+      height: 26px;
+      padding: 0 8px;
+      text-align: center;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      color: var(--text-primary);
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .theme-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .theme-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: left;
+      transition: all 0.12s ease;
+    }
+
+    .theme-option-btn:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+      background-color: var(--bg-hover);
+    }
+
+    .theme-option-btn.active {
+      border-color: var(--accent);
+      background-color: var(--accent-soft);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .theme-swatch-pair {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .theme-swatch-bg {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px 0 0 3px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .theme-swatch-accent {
+      width: 10px;
+      height: 12px;
+      border-radius: 0 3px 3px 0;
+    }
+
+    .priority-color-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 440px) {
+      .priority-color-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .priority-color-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 11px;
+    }
+
+    .color-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .color-swatch-input {
+      width: 26px;
+      height: 22px;
+      padding: 0;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .color-hex-text {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      width: 56px;
+    }
+
+    .custom-filter-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .custom-filter-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+    }
+
+    .custom-filter-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .custom-filter-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .custom-filter-query {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .custom-filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .backup-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .backup-actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .backup-summary-bar {
+      padding: 6px 9px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Analytics Charts */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 520px) {
+      .stats-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-box {
+      padding: 8px 10px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 15px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+      margin-top: 2px;
+    }
+
+    .chart-card {
+      padding: 10px 12px;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chart-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      margin-right: 4px;
+    }
+
+    .divider {
+      height: 1px;
+      background-color: var(--border-subtle);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 48px;
+      right: 14px;
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: var(--text-primary);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .toast.visible {
+      display: flex;
+    }
+
+    .toast-undo {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .toast-undo:hover {
+      text-decoration: underline;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="brand-group">
+        <h1 class="brand-title">TODOTXT</h1>
+        <span class="version-label">Local File Version</span>
+        <span class="task-summary" id="taskSummary">0 tasks</span>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" class="btn btn-sm" id="openAnalyticsBtn" title="View task completion trends and project distribution">Analytics</button>
+        <button type="button" class="btn btn-sm" id="openFiltersBtn" title="Customize filter buttons">Customize Filters</button>
+        <button type="button" class="btn btn-sm" id="openSettingsBtn" title="Theme, pagination, and priority color settings">Settings</button>
+        <button type="button" class="btn btn-sm" id="openBackupBtn" title="Export or restore settings, views, or tasks">Backup &amp; Restore</button>
+      </div>
+    </header>
+
+    <!-- Local File Sync Bar -->
+    <div class="file-sync-bar" id="fileSyncBar">
+      <div class="file-sync-info">
+        <span class="file-sync-name" id="fileSyncName">No local file connected</span>
+        <span class="file-sync-status" id="fileSyncStatus">Open or create a local todo.txt file (tasks are never cached in browser storage)</span>
+      </div>
+      <div class="file-sync-actions" id="fileSyncActions">
+        <button type="button" class="btn btn-sm btn-primary" id="reconnectFileBtn" style="display:none;">Reconnect</button>
+        <button type="button" class="btn btn-sm btn-primary" id="openLocalFileBtn">Open todo.txt</button>
+        <button type="button" class="btn btn-sm" id="newLocalFileBtn">New todo.txt</button>
+        <button type="button" class="btn btn-sm" id="syncNowBtn" style="display:none;" title="Re-read local todo.txt from disk">Sync Now</button>
+        <button type="button" class="btn btn-sm btn-primary" id="manualSaveFileBtn" style="display:none;" title="Download updated todo.txt file">Save todo.txt</button>
+        <button type="button" class="btn btn-sm" id="disconnectFileBtn" style="display:none;">Disconnect</button>
+      </div>
+      <input type="file" id="fallbackLocalFileInput" class="hidden-file-input" accept=".txt,text/plain" />
+    </div>
+
+    <!-- Search Input (Top) -->
+    <div class="input-wrap">
+      <input
+        type="text"
+        id="searchInput"
+        class="text-input"
+        placeholder="Search tasks, +project, @context... (/)"
+        autocomplete="off"
+        aria-label="Search tasks"
+      />
+      <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search">&times;</button>
+    </div>
+
+    <!-- Filter Buttons & Sort -->
+    <div class="filter-toolbar">
+      <div class="filter-buttons-scroll" id="filterButtonsContainer" role="tablist" aria-label="Task filters"></div>
+      <div class="filter-tools">
+        <button type="button" id="activeTagChip" class="active-tag-chip" style="display:none;"></button>
+        <select id="sortSelect" class="select-compact" aria-label="Sort tasks">
+          <option value="priority">Sort: Priority</option>
+          <option value="added">Sort: Order</option>
+          <option value="alpha">Sort: A-Z</option>
+          <option value="due">Sort: Due Date</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Compact Task List (10px font-size, content-only) -->
+    <main class="task-list-container">
+      <div>
+        <ul class="task-list" id="taskList" aria-label="Tasks"></ul>
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <p id="emptyMessage">No local file connected.</p>
+          <div class="empty-actions" id="emptyActions">
+            <button type="button" class="btn btn-sm btn-primary" id="emptyReconnectBtn" style="display:none;">Reconnect</button>
+            <button type="button" class="btn btn-sm btn-primary" id="emptyOpenFileBtn">Open todo.txt</button>
+            <button type="button" class="btn btn-sm" id="emptyNewFileBtn">New todo.txt</button>
+            <button type="button" class="btn btn-sm" id="resetFilterBtn" style="display:none;">Show All Tasks</button>
+          </div>
+        </div>
+      </div>
+      <nav class="pagination-bar" id="paginationBar" aria-label="Task pages" style="display: none;"></nav>
+    </main>
+
+    <!-- Add Task Input (Bottom Only) -->
+    <form class="input-wrap bottom-add-bar" id="addForm">
+      <input
+        type="text"
+        id="addInput"
+        class="text-input"
+        placeholder="Add task in todo.txt format (e.g. (A) Buy milk +Home @errands due:2026-11-25) [n]"
+        autocomplete="off"
+        aria-label="New task in todo.txt format"
+      />
+      <button type="submit" class="input-action-btn">Add</button>
+    </form>
+  </div>
+
+  <!-- Analytics Modal -->
+  <div class="modal-backdrop" id="analyticsModal" role="dialog" aria-modal="true" aria-labelledby="analyticsModalTitle">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title" id="analyticsModalTitle">Task Analytics</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeAnalyticsBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="stats-strip" id="analyticsSummaryStrip"></div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>Completion Trends Over Time</span>
+          <span class="chart-legend">
+            <span><span class="legend-dot" style="background: var(--success);"></span>Completed</span>
+            <span><span class="legend-dot" style="background: var(--accent);"></span>Created</span>
+          </span>
+        </div>
+        <div id="trendChartContainer"></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>Project Distribution</span>
+          <span class="chart-legend">
+            <span><span class="legend-dot" style="background: var(--accent);"></span>Open</span>
+            <span><span class="legend-dot" style="background: var(--success);"></span>Done</span>
+          </span>
+        </div>
+        <div id="projectChartContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="settingsModalTitle">Settings</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeSettingsBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-label">Theme</div>
+        <div class="theme-grid" id="themeGrid"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="modal-section">
+        <div class="modal-label">Pagination</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="pageSizeInput" class="setting-name">Tasks per page</label>
+            <span class="setting-desc">Number of tasks shown on each page (default: 10).</span>
+          </div>
+          <input
+            type="number"
+            id="pageSizeInput"
+            class="setting-number-input"
+            min="1"
+            max="500"
+            value="10"
+          />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="modal-section">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="modal-label">Checkbox Priority Colors (A–F)</span>
+          <button type="button" class="btn btn-sm" id="resetDefaultCheckboxColorsBtn">Reset Colors</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="colorizeCheckboxesInput" class="setting-name">Color checkboxes by priority</label>
+            <span class="setting-desc">Tint task checkboxes based on (A) through (F) priority.</span>
+          </div>
+          <input type="checkbox" id="colorizeCheckboxesInput" checked style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;" />
+        </div>
+
+        <div class="priority-color-grid" id="checkboxColorGrid"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="modal-section">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="modal-label">Priority Font Colors (A–F)</span>
+          <button type="button" class="btn btn-sm" id="resetDefaultTextColorsBtn">Reset Font Colors</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="boldPriorityAInput" class="setting-name">Bold (A) priority tasks</label>
+            <span class="setting-desc">Render priority (A) task text in bold by default.</span>
+          </div>
+          <input type="checkbox" id="boldPriorityAInput" checked style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;" />
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="colorizeTextInput" class="setting-name">Color task text by priority</label>
+            <span class="setting-desc">Apply custom font colors to priorities (A) through (F).</span>
+          </div>
+          <input type="checkbox" id="colorizeTextInput" checked style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;" />
+        </div>
+
+        <div class="priority-color-grid" id="textColorGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customize Filters Modal -->
+  <div class="modal-backdrop" id="filtersModal" role="dialog" aria-modal="true" aria-labelledby="filtersModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="filtersModalTitle">Customize Filter Buttons</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeFiltersBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <form class="modal-section" id="newFilterForm">
+        <div class="modal-label" id="filterFormHeading">Add Custom Filter Button</div>
+        <div class="form-row">
+          <input type="text" id="filterLabelInput" class="field-input" placeholder="Button label (e.g. Work)" maxlength="24" required />
+          <input type="text" id="filterQueryInput" class="field-input" placeholder="Rule (e.g. +Work is:open)" required />
+        </div>
+        <div class="form-row">
+          <select id="filterColorSelect" class="field-select" aria-label="Button accent color">
+            <option value="blue">Accent: Blue</option>
+            <option value="amber">Accent: Amber</option>
+            <option value="emerald">Accent: Green</option>
+            <option value="rose">Accent: Rose</option>
+            <option value="violet">Accent: Violet</option>
+            <option value="sky">Accent: Sky</option>
+          </select>
+          <div style="display:flex; gap:6px; justify-content:flex-end;">
+            <button type="button" class="btn btn-sm" id="cancelFilterEditBtn" style="display:none;">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-primary" id="saveFilterBtn">Add Button</button>
+          </div>
+        </div>
+        <p class="modal-help">
+          Query syntax: combine tokens with spaces (AND) or <code>OR</code>. Supports <code>+project</code>, <code>@context</code>, <code>(A)</code> or <code>(A-B)</code>, <code>is:open</code>, <code>is:done</code>, <code>due:today</code>, <code>due:overdue</code>, negation with <code>-</code> (e.g. <code>-@waiting</code>), or plain text.
+        </p>
+      </form>
+
+      <div class="divider"></div>
+
+      <div class="modal-section">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="modal-label">Active Filter Buttons</span>
+          <button type="button" class="btn btn-sm" id="resetDefaultFiltersBtn">Reset Defaults</button>
+        </div>
+        <div class="custom-filter-list" id="customFilterList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backup & Restore Modal -->
+  <div class="modal-backdrop" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="backupModalTitle">Local Backup &amp; Restore</h2>
+        <button type="button" class="btn btn-sm btn-icon" id="closeBackupBtn" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-section">
+        <div class="backup-summary-bar" id="backupSummaryBar"></div>
+        <div class="modal-label">Export Data</div>
+        <div class="backup-actions-grid">
+          <button type="button" class="btn btn-sm btn-primary" id="exportJsonBtn">Export Full Backup (.json)</button>
+          <button type="button" class="btn btn-sm" id="exportSettingsJsonBtn">Export Settings &amp; Views (.json)</button>
+          <button type="button" class="btn btn-sm" id="exportTxtBtn">Export todo.txt</button>
+          <button type="button" class="btn btn-sm" id="copyRawBtn">Copy todo.txt</button>
+        </div>
+        <p class="modal-help">
+          <strong>Full Backup (.json)</strong> saves all tasks, custom filter views, theme, pagination, and priority colors. <strong>Settings &amp; Views (.json)</strong> saves only your custom views and settings.
+        </p>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="modal-section">
+        <div class="modal-label">Restore / Import</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <button type="button" class="btn btn-sm" id="pickFileBtn">Import .txt or .json File</button>
+          <input type="file" id="importFileInput" class="hidden-file-input" accept=".txt,.json,text/plain,application/json" />
+          <select id="importModeSelect" class="select-compact" aria-label="Import mode">
+            <option value="merge">Tasks: Merge unique</option>
+            <option value="replace">Tasks: Replace all</option>
+          </select>
+        </div>
+        <label style="display:flex; align-items:center; gap:6px; font-size:10px; color:var(--text-secondary); cursor:pointer;">
+          <input type="checkbox" id="restoreSettingsOnImport" checked style="width:14px; height:14px; accent-color:var(--accent);" />
+          <span>Restore settings &amp; custom filter views when importing a .json backup</span>
+        </label>
+        <textarea id="pasteImportTextarea" class="field-textarea" placeholder="Or paste raw todo.txt lines or JSON backup here..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-sm btn-danger" id="clearCompletedBtn">Purge Completed</button>
+          <button type="button" class="btn btn-sm btn-primary" id="applyPasteImportBtn">Import Pasted Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Undo Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span id="toastMessage"></span>
+    <button type="button" class="toast-undo" id="toastUndoBtn" style="display:none;">Undo</button>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var STORAGE_KEYS = {
+        FILTERS: 'todotxt_localfile_filters_v1',
+        SETTINGS: 'todotxt_localfile_prefs_v1'
+      };
+
+      var IDB_NAME = 'todotxt_localfile_db';
+      var IDB_STORE = 'handles';
+      var IDB_HANDLE_KEY = 'active_todo_handle';
+
+      var PRIORITIES = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+      var DEFAULT_FILTERS = [
+        { id: 'f_all', label: 'All', query: '', color: 'blue', visible: true },
+        { id: 'f_open', label: 'Open', query: 'is:open', color: 'sky', visible: true },
+        { id: 'f_p1', label: 'P1', query: '(A-B) is:open', color: 'amber', visible: true },
+        { id: 'f_p2', label: 'P2', query: '(C-D) is:open', color: 'sky', visible: true },
+        { id: 'f_p3', label: 'P3', query: '(E-F) is:open', color: 'violet', visible: true },
+        { id: 'f_done', label: 'Done', query: 'is:done', color: 'emerald', visible: true }
+      ];
+
+      var DEFAULT_PRIORITY_COLORS = {
+        A: '#eab308',
+        B: '#ef4444',
+        C: '#3b82f6',
+        D: '#22c55e',
+        E: '#a855f7',
+        F: '#06b6d4'
+      };
+
+      var DEFAULT_TEXT_COLORS = {
+        A: '#fde047',
+        B: '#fca5a5',
+        C: '#93c5fd',
+        D: '#86efac',
+        E: '#d8b4fe',
+        F: '#67e8f9'
+      };
+
+      var THEMES = {
+        midnight: {
+          label: 'Midnight',
+          bgCanvas: '#0b0d10',
+          bgSurface: '#12151b',
+          bgElevated: '#181c24',
+          bgHover: '#1d222c',
+          borderSubtle: '#232834',
+          borderStrong: '#323949',
+          textPrimary: '#e6e9ef',
+          textSecondary: '#8c95a6',
+          textMuted: '#5a6272',
+          accent: '#3b82f6',
+          accentHover: '#2563eb',
+          accentSoft: 'rgba(59, 130, 246, 0.14)',
+          accentFg: '#ffffff'
+        },
+        slate: {
+          label: 'Slate',
+          bgCanvas: '#090e1a',
+          bgSurface: '#0f172a',
+          bgElevated: '#162033',
+          bgHover: '#1e293b',
+          borderSubtle: '#1e293b',
+          borderStrong: '#334155',
+          textPrimary: '#f1f5f9',
+          textSecondary: '#94a3b8',
+          textMuted: '#64748b',
+          accent: '#0ea5e9',
+          accentHover: '#0284c7',
+          accentSoft: 'rgba(14, 165, 233, 0.16)',
+          accentFg: '#ffffff'
+        },
+        zinc: {
+          label: 'Zinc',
+          bgCanvas: '#09090b',
+          bgSurface: '#131316',
+          bgElevated: '#1b1b1f',
+          bgHover: '#232329',
+          borderSubtle: '#27272a',
+          borderStrong: '#3f3f46',
+          textPrimary: '#f4f4f5',
+          textSecondary: '#a1a1aa',
+          textMuted: '#71717a',
+          accent: '#6366f1',
+          accentHover: '#4f46e5',
+          accentSoft: 'rgba(99, 102, 241, 0.16)',
+          accentFg: '#ffffff'
+        },
+        neutral: {
+          label: 'Neutral',
+          bgCanvas: '#0a0a0a',
+          bgSurface: '#141414',
+          bgElevated: '#1c1c1c',
+          bgHover: '#242424',
+          borderSubtle: '#262626',
+          borderStrong: '#404040',
+          textPrimary: '#f5f5f5',
+          textSecondary: '#a3a3a3',
+          textMuted: '#737373',
+          accent: '#d4d4d4',
+          accentHover: '#e5e5e5',
+          accentSoft: 'rgba(212, 212, 212, 0.14)',
+          accentFg: '#0a0a0a'
+        },
+        stone: {
+          label: 'Stone',
+          bgCanvas: '#0c0a09',
+          bgSurface: '#161311',
+          bgElevated: '#1f1b18',
+          bgHover: '#292524',
+          borderSubtle: '#292524',
+          borderStrong: '#44403c',
+          textPrimary: '#f5f5f4',
+          textSecondary: '#a8a29e',
+          textMuted: '#78716c',
+          accent: '#f59e0b',
+          accentHover: '#d97706',
+          accentSoft: 'rgba(245, 158, 11, 0.16)',
+          accentFg: '#0c0a09'
+        },
+        emerald: {
+          label: 'Forest',
+          bgCanvas: '#070f0c',
+          bgSurface: '#0d1914',
+          bgElevated: '#13241d',
+          bgHover: '#193027',
+          borderSubtle: '#1d352b',
+          borderStrong: '#2c4f41',
+          textPrimary: '#ecfdf5',
+          textSecondary: '#86efac',
+          textMuted: '#4d7c66',
+          accent: '#10b981',
+          accentHover: '#059669',
+          accentSoft: 'rgba(16, 185, 129, 0.16)',
+          accentFg: '#070f0c'
+        }
+      };
+
+      var state = {
+        tasks: [],
+        filters: [],
+        activeFilterId: 'f_all',
+        searchQuery: '',
+        selectedTag: null,
+        sortBy: 'priority',
+        pageSize: 10,
+        currentPage: 1,
+        theme: 'midnight',
+        boldPriorityA: true,
+        colorizeCheckboxes: true,
+        priorityColors: Object.assign({}, DEFAULT_PRIORITY_COLORS),
+        colorizeText: true,
+        priorityTextColors: Object.assign({}, DEFAULT_TEXT_COLORS),
+        editingTaskId: null,
+        editingFilterId: null,
+        undoSnapshot: null,
+        fileHandle: null,
+        pendingHandle: null,
+        manualMode: false,
+        manualFileName: 'todo.txt',
+        hasUnsavedManualChanges: false,
+        lastSyncedText: '',
+        lastKnownModified: 0,
+        lastSyncTime: null,
+        syncStatus: 'disconnected',
+        isWriting: false
+      };
+
+      var writeQueue = Promise.resolve();
+      var toastTimer = null;
+
+      function applyTheme(themeKey) {
+        var t = THEMES[themeKey] || THEMES.midnight;
+        var root = document.documentElement.style;
+        root.setProperty('--bg-canvas', t.bgCanvas);
+        root.setProperty('--bg-surface', t.bgSurface);
+        root.setProperty('--bg-elevated', t.bgElevated);
+        root.setProperty('--bg-hover', t.bgHover);
+        root.setProperty('--border-subtle', t.borderSubtle);
+        root.setProperty('--border-strong', t.borderStrong);
+        root.setProperty('--text-primary', t.textPrimary);
+        root.setProperty('--text-secondary', t.textSecondary);
+        root.setProperty('--text-muted', t.textMuted);
+        root.setProperty('--accent', t.accent);
+        root.setProperty('--accent-hover', t.accentHover);
+        root.setProperty('--accent-soft', t.accentSoft);
+        root.setProperty('--accent-fg', t.accentFg);
+      }
+
+      function todayISO() {
+        var d = new Date();
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+
+      function uid() {
+        return 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+      }
+
+      function parseTodoLine(raw) {
+        var text = String(raw || '').trim();
+        var remaining = text;
+        var completed = false;
+        var completionDate = null;
+        var priority = null;
+        var creationDate = null;
+
+        if (/^x(\s|$)/.test(remaining)) {
+          completed = true;
+          remaining = remaining.slice(1).trim();
+          var compDateMatch = remaining.match(/^(\d{4}-\d{2}-\d{2})(?:\s+|$)/);
+          if (compDateMatch) {
+            completionDate = compDateMatch[1];
+            remaining = remaining.slice(compDateMatch[0].length).trim();
+          }
+        }
+
+        var priMatch = remaining.match(/^\(([A-Z])\)\s+/);
+        if (priMatch) {
+          priority = priMatch[1];
+          remaining = remaining.slice(priMatch[0].length).trim();
+        }
+
+        var createMatch = remaining.match(/^(\d{4}-\d{2}-\d{2})(?:\s+|$)/);
+        if (createMatch) {
+          creationDate = createMatch[1];
+          remaining = remaining.slice(createMatch[0].length).trim();
+        }
+
+        var projects = [];
+        var contexts = [];
+        var meta = {};
+        var contentParts = [];
+        var tokens = remaining ? remaining.split(/\s+/) : [];
+
+        for (var i = 0; i < tokens.length; i++) {
+          var tok = tokens[i];
+          if (/^\+\S+/.test(tok)) {
+            var pVal = tok.slice(1);
+            if (!projects.some(function (ex) { return ex.toLowerCase() === pVal.toLowerCase(); })) {
+              projects.push(pVal);
+            }
+          } else if (/^@\S+/.test(tok)) {
+            var cVal = tok.slice(1);
+            if (!contexts.some(function (ex) { return ex.toLowerCase() === cVal.toLowerCase(); })) {
+              contexts.push(cVal);
+            }
+          } else if (/^[a-zA-Z][a-zA-Z0-9_-]*:[^\s]+$/.test(tok) && !/^https?:\/\//i.test(tok)) {
+            var colonIdx = tok.indexOf(':');
+            var k = tok.slice(0, colonIdx).toLowerCase();
+            var v = tok.slice(colonIdx + 1);
+            meta[k] = v;
+          } else {
+            contentParts.push(tok);
+          }
+        }
+
+        var content = '';
+        if (contentParts.length > 0) {
+          content = contentParts.join(' ').trim();
+        } else if (projects.length === 0 && contexts.length === 0) {
+          content = remaining || text;
+        }
+
+        return {
+          raw: text,
+          completed: completed,
+          completionDate: completionDate,
+          priority: priority,
+          creationDate: creationDate,
+          projects: projects,
+          contexts: contexts,
+          meta: meta,
+          due: meta.due || null,
+          content: content
+        };
+      }
+
+      function applyPriorityPrefix(raw, targetPriority) {
+        var text = String(raw || '').trim();
+        var prefix = '';
+        var rest = text;
+
+        if (/^x(\s|$)/.test(rest)) {
+          var doneMatch = rest.match(/^(x(?:\s+\d{4}-\d{2}-\d{2})?)\s*(.*)$/);
+          if (doneMatch) {
+            prefix = doneMatch[1] + ' ';
+            rest = doneMatch[2] || '';
+          }
+        }
+
+        var existingPriMatch = rest.match(/^\(([A-Z])\)\s*(.*)$/);
+        var existingPri = null;
+        if (existingPriMatch) {
+          existingPri = existingPriMatch[1];
+          rest = existingPriMatch[2] || '';
+        }
+
+        if (!targetPriority || existingPri === targetPriority) {
+          return (prefix + rest).trim();
+        }
+        return (prefix + '(' + targetPriority + ') ' + rest).trim();
+      }
+
+      function toggleRawCompletion(raw) {
+        var trimmed = String(raw || '').trim();
+        var today = todayISO();
+        if (/^x(\s|$)/.test(trimmed)) {
+          var rest = trimmed.slice(1).trim();
+          rest = rest.replace(/^\d{4}-\d{2}-\d{2}\s*/, '').trim();
+          return rest;
+        } else {
+          return 'x ' + today + ' ' + trimmed;
+        }
+      }
+
+      function matchesSingleTerm(parsed, term) {
+        if (!term) return true;
+        var negate = false;
+        if (term.charAt(0) === '-' && term.length > 1) {
+          negate = true;
+          term = term.slice(1);
+        }
+
+        var lower = term.toLowerCase();
+        var result = false;
+
+        if (lower === 'is:open' || lower === 'is:active') {
+          result = !parsed.completed;
+        } else if (lower === 'is:done' || lower === 'is:completed') {
+          result = parsed.completed;
+        } else if (/^\(([A-Z])\)$/i.test(term)) {
+          var targetP = term.slice(1, 2).toUpperCase();
+          result = parsed.priority === targetP;
+        } else if (/^\(([A-Z])-([A-Z])\)$/i.test(term)) {
+          var m = term.match(/^\(([A-Z])-([A-Z])\)$/i);
+          var startC = m[1].toUpperCase().charCodeAt(0);
+          var endC = m[2].toUpperCase().charCodeAt(0);
+          var pCode = parsed.priority ? parsed.priority.charCodeAt(0) : -1;
+          result = pCode >= Math.min(startC, endC) && pCode <= Math.max(startC, endC);
+        } else if (lower.indexOf('priority:') === 0) {
+          var pVal = lower.slice(9).toUpperCase();
+          result = parsed.priority === pVal;
+        } else if (lower === 'due:today') {
+          result = parsed.due === todayISO();
+        } else if (lower === 'due:overdue') {
+          result = Boolean(parsed.due && !parsed.completed && parsed.due < todayISO());
+        } else if (lower === 'has:due') {
+          result = Boolean(parsed.due);
+        } else if (term.charAt(0) === '+') {
+          var proj = term.slice(1).toLowerCase();
+          result = parsed.projects.some(function (p) { return p.toLowerCase() === proj || p.toLowerCase().indexOf(proj) !== -1; });
+        } else if (term.charAt(0) === '@') {
+          var ctx = term.slice(1).toLowerCase();
+          result = parsed.contexts.some(function (c) { return c.toLowerCase() === ctx || c.toLowerCase().indexOf(ctx) !== -1; });
+        } else {
+          result = parsed.raw.toLowerCase().indexOf(lower) !== -1;
+        }
+
+        return negate ? !result : result;
+      }
+
+      function matchesQuery(parsed, query) {
+        var q = String(query || '').trim();
+        if (!q) return true;
+        var orGroups = q.split(/\s+OR\s+/);
+        for (var i = 0; i < orGroups.length; i++) {
+          var terms = orGroups[i].trim().split(/\s+/);
+          var allMatch = true;
+          for (var j = 0; j < terms.length; j++) {
+            if (!matchesSingleTerm(parsed, terms[j])) {
+              allMatch = false;
+              break;
+            }
+          }
+          if (allMatch) return true;
+        }
+        return false;
+      }
+
+      function migrateFiltersIfNeeded(filters) {
+        var hasLegacyHigh = filters.some(function (f) { return f.id === 'f_high'; });
+        var hasP1 = filters.some(function (f) { return f.id === 'f_p1'; });
+        if (!hasLegacyHigh || hasP1) return filters;
+
+        var migrated = [];
+        filters.forEach(function (f) {
+          if (f.id === 'f_high') {
+            migrated.push({ id: 'f_p1', label: 'P1', query: '(A-B) is:open', color: 'amber', visible: true });
+            migrated.push({ id: 'f_p2', label: 'P2', query: '(C-D) is:open', color: 'sky', visible: true });
+            migrated.push({ id: 'f_p3', label: 'P3', query: '(E-F) is:open', color: 'violet', visible: true });
+          } else {
+            migrated.push(f);
+          }
+        });
+        if (state.activeFilterId === 'f_high') {
+          state.activeFilterId = 'f_p1';
+        }
+        return migrated;
+      }
+
+      function buildSettingsSnapshot() {
+        return {
+          activeFilterId: state.activeFilterId,
+          sortBy: state.sortBy,
+          pageSize: state.pageSize,
+          theme: state.theme,
+          boldPriorityA: state.boldPriorityA,
+          colorizeCheckboxes: state.colorizeCheckboxes,
+          priorityColors: state.priorityColors,
+          colorizeText: state.colorizeText,
+          priorityTextColors: state.priorityTextColors
+        };
+      }
+
+      function applyImportedConfig(obj) {
+        if (Array.isArray(obj.filters) && obj.filters.length > 0) {
+          state.filters = migrateFiltersIfNeeded(obj.filters);
+        }
+        var s = obj.settings || obj;
+        if (s.activeFilterId) state.activeFilterId = s.activeFilterId;
+        if (s.sortBy) state.sortBy = s.sortBy;
+        if (typeof s.pageSize === 'number' && s.pageSize >= 1) {
+          state.pageSize = Math.min(500, Math.floor(s.pageSize));
+        }
+        if (s.theme && THEMES[s.theme]) {
+          state.theme = s.theme;
+          applyTheme(s.theme);
+        }
+        if (typeof s.boldPriorityA === 'boolean') state.boldPriorityA = s.boldPriorityA;
+        if (typeof s.colorizeCheckboxes === 'boolean') state.colorizeCheckboxes = s.colorizeCheckboxes;
+        if (s.priorityColors) state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS, s.priorityColors);
+        if (typeof s.colorizeText === 'boolean') state.colorizeText = s.colorizeText;
+        if (s.priorityTextColors) state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS, s.priorityTextColors);
+      }
+
+      function hasFileSystemAccess() {
+        return typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
+      }
+
+      function serializeTasksToText(tasks) {
+        if (!tasks || tasks.length === 0) return '';
+        return tasks.map(function (t) { return t.raw; }).join('\n') + '\n';
+      }
+
+      function parseTextToTasks(text) {
+        var lines = String(text || '').split(/\r?\n/);
+        var parsed = [];
+        for (var i = 0; i < lines.length; i++) {
+          var trimmed = lines[i].trim();
+          if (trimmed.length > 0) {
+            parsed.push({ id: uid(), raw: trimmed });
+          }
+        }
+        return parsed;
+      }
+
+      function openHandleDB() {
+        return new Promise(function (resolve, reject) {
+          if (!window.indexedDB) {
+            reject(new Error('IndexedDB unavailable'));
+            return;
+          }
+          var req = window.indexedDB.open(IDB_NAME, 1);
+          req.onupgradeneeded = function (e) {
+            var db = e.target.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+              db.createObjectStore(IDB_STORE);
+            }
+          };
+          req.onsuccess = function (e) { resolve(e.target.result); };
+          req.onerror = function () { reject(req.error); };
+        });
+      }
+
+      function saveHandleToIDB(handle) {
+        return openHandleDB().then(function (db) {
+          return new Promise(function (resolve, reject) {
+            var tx = db.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).put(handle, IDB_HANDLE_KEY);
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { reject(tx.error); };
+          });
+        }).catch(function () { /* ignore idb errors */ });
+      }
+
+      function loadHandleFromIDB() {
+        return openHandleDB().then(function (db) {
+          return new Promise(function (resolve) {
+            var tx = db.transaction(IDB_STORE, 'readonly');
+            var req = tx.objectStore(IDB_STORE).get(IDB_HANDLE_KEY);
+            req.onsuccess = function () { resolve(req.result || null); };
+            req.onerror = function () { resolve(null); };
+          });
+        }).catch(function () { return null; });
+      }
+
+      function clearHandleFromIDB() {
+        return openHandleDB().then(function (db) {
+          return new Promise(function (resolve) {
+            var tx = db.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).delete(IDB_HANDLE_KEY);
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { resolve(); };
+          });
+        }).catch(function () { /* ignore */ });
+      }
+
+      function formatSyncTime(dateObj) {
+        if (!dateObj) return '';
+        var hh = String(dateObj.getHours()).padStart(2, '0');
+        var mm = String(dateObj.getMinutes()).padStart(2, '0');
+        var ss = String(dateObj.getSeconds()).padStart(2, '0');
+        return hh + ':' + mm + ':' + ss;
+      }
+
+      function updateFileBar() {
+        var nameEl = document.getElementById('fileSyncName');
+        var statusEl = document.getElementById('fileSyncStatus');
+        var reconnectBtn = document.getElementById('reconnectFileBtn');
+        var openBtn = document.getElementById('openLocalFileBtn');
+        var newBtn = document.getElementById('newLocalFileBtn');
+        var syncBtn = document.getElementById('syncNowBtn');
+        var manualSaveBtn = document.getElementById('manualSaveFileBtn');
+        var disconnectBtn = document.getElementById('disconnectFileBtn');
+
+        if (!nameEl || !statusEl) return;
+
+        if (state.fileHandle) {
+          nameEl.textContent = state.fileHandle.name;
+          reconnectBtn.style.display = state.syncStatus === 'permission' ? 'inline-flex' : 'none';
+          if (state.syncStatus === 'permission') {
+            reconnectBtn.textContent = 'Grant Access';
+          }
+          openBtn.textContent = 'Switch File';
+          openBtn.classList.remove('btn-primary');
+          newBtn.style.display = 'none';
+          syncBtn.style.display = 'inline-flex';
+          manualSaveBtn.style.display = 'none';
+          disconnectBtn.style.display = 'inline-flex';
+
+          if (state.syncStatus === 'syncing') {
+            statusEl.className = 'file-sync-status';
+            statusEl.textContent = 'Syncing to disk...';
+          } else if (state.syncStatus === 'permission') {
+            statusEl.className = 'file-sync-status warn';
+            statusEl.textContent = 'Write permission required';
+          } else if (state.syncStatus === 'error') {
+            statusEl.className = 'file-sync-status error';
+            statusEl.textContent = 'File sync error — click Sync Now';
+          } else {
+            statusEl.className = 'file-sync-status synced';
+            statusEl.textContent = 'In sync with local file' + (state.lastSyncTime ? ' · ' + formatSyncTime(state.lastSyncTime) : '');
+          }
+        } else if (state.manualMode) {
+          nameEl.textContent = state.manualFileName + ' (manual save)';
+          reconnectBtn.style.display = 'none';
+          openBtn.textContent = 'Load .txt';
+          openBtn.classList.remove('btn-primary');
+          newBtn.style.display = 'none';
+          syncBtn.style.display = 'none';
+          manualSaveBtn.style.display = 'inline-flex';
+          disconnectBtn.style.display = 'inline-flex';
+          statusEl.className = 'file-sync-status ' + (state.hasUnsavedManualChanges ? 'warn' : 'synced');
+          statusEl.textContent = state.hasUnsavedManualChanges
+            ? 'Unsaved edits — click Save todo.txt to write to disk'
+            : 'Loaded in manual-save mode (direct auto-write requires Chrome/Edge)';
+        } else {
+          nameEl.textContent = 'No local file connected';
+          openBtn.textContent = 'Open todo.txt';
+          openBtn.classList.add('btn-primary');
+          newBtn.style.display = 'inline-flex';
+          syncBtn.style.display = 'none';
+          manualSaveBtn.style.display = 'none';
+          disconnectBtn.style.display = 'none';
+          if (state.pendingHandle) {
+            reconnectBtn.style.display = 'inline-flex';
+            reconnectBtn.textContent = 'Reconnect ' + state.pendingHandle.name;
+            statusEl.className = 'file-sync-status warn';
+            statusEl.textContent = 'Previous file remembered — click Reconnect to resume sync';
+          } else {
+            reconnectBtn.style.display = 'none';
+            statusEl.className = 'file-sync-status';
+            statusEl.textContent = 'Tasks stay in your local todo.txt file (zero browser task cache)';
+          }
+        }
+      }
+
+      function enqueueFileWrite() {
+        if (!state.fileHandle) {
+          if (state.manualMode) {
+            state.hasUnsavedManualChanges = true;
+            updateFileBar();
+          }
+          return Promise.resolve();
+        }
+
+        var contentToWrite = serializeTasksToText(state.tasks);
+        writeQueue = writeQueue.then(async function () {
+          if (!state.fileHandle) return;
+          try {
+            var perm = await state.fileHandle.queryPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') {
+              state.syncStatus = 'permission';
+              updateFileBar();
+              showToast('Write permission needed — click Grant Access');
+              return;
+            }
+            state.isWriting = true;
+            state.syncStatus = 'syncing';
+            updateFileBar();
+
+            var writable = await state.fileHandle.createWritable();
+            await writable.write(contentToWrite);
+            await writable.close();
+
+            var updatedFile = await state.fileHandle.getFile();
+            state.lastSyncedText = contentToWrite;
+            state.lastKnownModified = updatedFile.lastModified;
+            state.lastSyncTime = new Date();
+            state.syncStatus = 'synced';
+          } catch (err) {
+            state.syncStatus = 'error';
+            showToast('Failed to write to ' + (state.fileHandle ? state.fileHandle.name : 'file'));
+          } finally {
+            state.isWriting = false;
+            updateFileBar();
+          }
+        });
+
+        return writeQueue;
+      }
+
+      async function syncFromLocalFile(forceToast) {
+        if (!state.fileHandle || state.isWriting || state.editingTaskId) return;
+        try {
+          var perm = await state.fileHandle.queryPermission({ mode: 'read' });
+          if (perm !== 'granted') {
+            state.syncStatus = 'permission';
+            updateFileBar();
+            return;
+          }
+          var file = await state.fileHandle.getFile();
+          if (forceToast || file.lastModified !== state.lastKnownModified) {
+            var text = await file.text();
+            state.lastKnownModified = file.lastModified;
+            if (text !== state.lastSyncedText) {
+              state.lastSyncedText = text;
+              state.tasks = parseTextToTasks(text);
+              state.lastSyncTime = new Date();
+              state.syncStatus = 'synced';
+              render();
+              showToast('Synced updates from ' + state.fileHandle.name);
+            } else {
+              state.lastSyncTime = new Date();
+              state.syncStatus = 'synced';
+              updateFileBar();
+              if (forceToast) {
+                showToast(state.fileHandle.name + ' is up to date');
+              }
+            }
+          }
+        } catch (err) {
+          state.syncStatus = 'error';
+          updateFileBar();
+        }
+      }
+
+      async function attachFileHandle(handle, isNewFile) {
+        if (!handle) return;
+        var perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+          perm = await handle.requestPermission({ mode: 'readwrite' });
+        }
+        if (perm !== 'granted') {
+          showToast('Read/write access is required to sync ' + handle.name);
+          return;
+        }
+
+        state.fileHandle = handle;
+        state.pendingHandle = null;
+        state.manualMode = false;
+        state.hasUnsavedManualChanges = false;
+        await saveHandleToIDB(handle);
+
+        if (isNewFile) {
+          var initialContent = serializeTasksToText(state.tasks);
+          state.isWriting = true;
+          var writable = await handle.createWritable();
+          await writable.write(initialContent);
+          await writable.close();
+          var createdFile = await handle.getFile();
+          state.lastSyncedText = initialContent;
+          state.lastKnownModified = createdFile.lastModified;
+          state.isWriting = false;
+        } else {
+          var file = await handle.getFile();
+          var text = await file.text();
+          state.lastSyncedText = text;
+          state.lastKnownModified = file.lastModified;
+          state.tasks = parseTextToTasks(text);
+          state.currentPage = 1;
+        }
+
+        state.lastSyncTime = new Date();
+        state.syncStatus = 'synced';
+        state.editingTaskId = null;
+        render();
+        showToast((isNewFile ? 'Created & synced ' : 'Connected to ') + handle.name);
+      }
+
+      async function openLocalFileFlow() {
+        if (hasFileSystemAccess()) {
+          try {
+            var handles = await window.showOpenFilePicker({
+              types: [{ description: 'todo.txt text files', accept: { 'text/plain': ['.txt'] } }],
+              excludeAcceptAllOption: false,
+              multiple: false
+            });
+            if (handles && handles[0]) {
+              await attachFileHandle(handles[0], false);
+            }
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            // SecurityError (e.g. embedded iframe) or unsupported -> fall back to file input
+          }
+        }
+        document.getElementById('fallbackLocalFileInput').click();
+      }
+
+      async function createNewLocalFileFlow() {
+        if (hasFileSystemAccess()) {
+          try {
+            var handle = await window.showSaveFilePicker({
+              suggestedName: 'todo.txt',
+              types: [{ description: 'todo.txt text files', accept: { 'text/plain': ['.txt'] } }]
+            });
+            if (handle) {
+              if (!state.fileHandle && !state.manualMode) {
+                state.tasks = [];
+              }
+              await attachFileHandle(handle, true);
+            }
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            // Fallback to manual-save session if blocked (e.g. iframe or Safari/Firefox)
+          }
+        }
+
+        state.fileHandle = null;
+        state.pendingHandle = null;
+        state.manualMode = true;
+        state.manualFileName = 'todo.txt';
+        state.hasUnsavedManualChanges = false;
+        state.currentPage = 1;
+        render();
+        showToast('Started manual todo.txt session (click Save todo.txt to write to disk)');
+      }
+
+      async function reconnectPendingFile() {
+        var target = state.fileHandle || state.pendingHandle;
+        if (!target) return;
+        try {
+          await attachFileHandle(target, false);
+        } catch (err) {
+          showToast('Could not reconnect file. Try Open todo.txt.');
+        }
+      }
+
+      async function disconnectLocalFile() {
+        state.fileHandle = null;
+        state.pendingHandle = null;
+        state.manualMode = false;
+        state.hasUnsavedManualChanges = false;
+        state.tasks = [];
+        state.lastSyncedText = '';
+        state.lastKnownModified = 0;
+        state.lastSyncTime = null;
+        state.syncStatus = 'disconnected';
+        state.editingTaskId = null;
+        state.selectedTag = null;
+        await clearHandleFromIDB();
+        render();
+        showToast('Disconnected local file');
+      }
+
+      function savePreferences() {
+        try {
+          localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(state.filters));
+          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(buildSettingsSnapshot()));
+        } catch (err) {
+          // ignore prefs quota error
+        }
+      }
+
+      function saveState() {
+        savePreferences();
+      }
+
+      function persistTasks() {
+        return enqueueFileWrite();
+      }
+
+      async function loadState() {
+        try {
+          var rawFilters = localStorage.getItem(STORAGE_KEYS.FILTERS);
+          var rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+
+          if (rawSettings) {
+            applyImportedConfig({ settings: JSON.parse(rawSettings) });
+          }
+
+          if (rawFilters) {
+            var parsedFilters = JSON.parse(rawFilters);
+            if (Array.isArray(parsedFilters) && parsedFilters.length > 0) {
+              state.filters = migrateFiltersIfNeeded(parsedFilters);
+            } else {
+              state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+            }
+          } else {
+            state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+          }
+        } catch (err) {
+          state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+        }
+
+        // Restore saved FileSystemFileHandle reference (never cached tasks)
+        var savedHandle = await loadHandleFromIDB();
+        if (savedHandle) {
+          try {
+            var perm = await savedHandle.queryPermission({ mode: 'readwrite' });
+            if (perm === 'granted') {
+              await attachFileHandle(savedHandle, false);
+              return;
+            } else {
+              state.pendingHandle = savedHandle;
+            }
+          } catch (err) {
+            state.pendingHandle = savedHandle;
+          }
+        }
+        render();
+      }
+
+      function getFilteredAndSortedTasks() {
+        var activeFilter = state.filters.find(function (f) { return f.id === state.activeFilterId; });
+        var filterQuery = activeFilter ? activeFilter.query : '';
+        var search = state.searchQuery.trim().toLowerCase();
+        var tagLower = state.selectedTag ? state.selectedTag.toLowerCase() : null;
+
+        var enriched = [];
+        for (var i = 0; i < state.tasks.length; i++) {
+          var task = state.tasks[i];
+          var parsed = parseTodoLine(task.raw);
+          if (!matchesQuery(parsed, filterQuery)) continue;
+          if (tagLower) {
+            if (tagLower.charAt(0) === '+') {
+              var targetProj = tagLower.slice(1);
+              if (!parsed.projects.some(function (p) { return p.toLowerCase() === targetProj; })) continue;
+            } else if (tagLower.charAt(0) === '@') {
+              var targetCtx = tagLower.slice(1);
+              if (!parsed.contexts.some(function (c) { return c.toLowerCase() === targetCtx; })) continue;
+            }
+          }
+          if (search && parsed.raw.toLowerCase().indexOf(search) === -1) continue;
+          enriched.push({ task: task, parsed: parsed, index: i });
+        }
+
+        enriched.sort(function (a, b) {
+          if (state.sortBy === 'priority') {
+            if (a.parsed.completed !== b.parsed.completed) {
+              return a.parsed.completed ? 1 : -1;
+            }
+            var pa = a.parsed.priority || 'ZZ';
+            var pb = b.parsed.priority || 'ZZ';
+            if (pa !== pb) return pa < pb ? -1 : 1;
+            return a.index - b.index;
+          }
+          if (state.sortBy === 'alpha') {
+            var ta = a.parsed.content || a.parsed.raw;
+            var tb = b.parsed.content || b.parsed.raw;
+            return ta.localeCompare(tb);
+          }
+          if (state.sortBy === 'due') {
+            if (a.parsed.completed !== b.parsed.completed) {
+              return a.parsed.completed ? 1 : -1;
+            }
+            var da = a.parsed.due || '9999-99-99';
+            var db = b.parsed.due || '9999-99-99';
+            if (da !== db) return da < db ? -1 : 1;
+            return a.index - b.index;
+          }
+          return a.index - b.index;
+        });
+
+        return enriched;
+      }
+
+      function countForFilter(query) {
+        var count = 0;
+        for (var i = 0; i < state.tasks.length; i++) {
+          var parsed = parseTodoLine(state.tasks[i].raw);
+          if (matchesQuery(parsed, query)) count++;
+        }
+        return count;
+      }
+
+      function getCheckboxStyleForTask(parsed) {
+        if (!state.colorizeCheckboxes || !parsed.priority) return null;
+        return state.priorityColors[parsed.priority] || null;
+      }
+
+      function getTextColorForTask(parsed) {
+        if (!state.colorizeText || parsed.completed || !parsed.priority) return null;
+        return state.priorityTextColors[parsed.priority] || null;
+      }
+
+      function renderFilterButtons() {
+        var container = document.getElementById('filterButtonsContainer');
+        container.innerHTML = '';
+
+        var visibleFilters = state.filters.filter(function (f) { return f.visible !== false; });
+        if (!visibleFilters.some(function (f) { return f.id === state.activeFilterId; }) && visibleFilters.length > 0) {
+          state.activeFilterId = visibleFilters[0].id;
+        }
+
+        visibleFilters.forEach(function (f) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'filter-btn' + (f.id === state.activeFilterId ? ' active' : '');
+          btn.setAttribute('role', 'tab');
+          btn.setAttribute('aria-selected', f.id === state.activeFilterId ? 'true' : 'false');
+          btn.dataset.color = f.color || 'blue';
+          btn.title = f.query ? 'Rule: ' + f.query : 'Show all tasks';
+
+          var labelSpan = document.createElement('span');
+          labelSpan.textContent = f.label;
+
+          var countSpan = document.createElement('span');
+          countSpan.className = 'filter-count';
+          countSpan.textContent = String(countForFilter(f.query));
+
+          btn.appendChild(labelSpan);
+          btn.appendChild(countSpan);
+
+          btn.addEventListener('click', function () {
+            state.activeFilterId = f.id;
+            state.currentPage = 1;
+            saveState();
+            render();
+          });
+
+          container.appendChild(btn);
+        });
+      }
+
+      function buildPageRange(current, total) {
+        if (total <= 7) {
+          var all = [];
+          for (var i = 1; i <= total; i++) all.push(i);
+          return all;
+        }
+        var pages = [1];
+        var start = Math.max(2, current - 2);
+        var end = Math.min(total - 1, current + 2);
+        if (start > 2) pages.push('...');
+        for (var p = start; p <= end; p++) pages.push(p);
+        if (end < total - 1) pages.push('...');
+        pages.push(total);
+        return pages;
+      }
+
+      function renderPagination(totalItems, totalPages) {
+        var bar = document.getElementById('paginationBar');
+        bar.innerHTML = '';
+
+        if (totalItems === 0 || totalPages <= 1) {
+          bar.style.display = 'none';
+          return;
+        }
+
+        bar.style.display = 'flex';
+
+        var prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'page-btn';
+        prevBtn.textContent = '< Prev';
+        prevBtn.disabled = state.currentPage <= 1;
+        prevBtn.addEventListener('click', function () {
+          if (state.currentPage > 1) {
+            state.currentPage--;
+            state.editingTaskId = null;
+            renderTasks();
+          }
+        });
+        bar.appendChild(prevBtn);
+
+        var range = buildPageRange(state.currentPage, totalPages);
+        range.forEach(function (item) {
+          if (item === '...') {
+            var ell = document.createElement('span');
+            ell.className = 'page-ellipsis';
+            ell.textContent = '...';
+            bar.appendChild(ell);
+          } else {
+            var pBtn = document.createElement('button');
+            pBtn.type = 'button';
+            pBtn.className = 'page-btn' + (item === state.currentPage ? ' active' : '');
+            pBtn.textContent = String(item);
+            pBtn.setAttribute('aria-label', 'Page ' + item);
+            if (item === state.currentPage) {
+              pBtn.setAttribute('aria-current', 'page');
+            }
+            pBtn.addEventListener('click', function () {
+              if (state.currentPage !== item) {
+                state.currentPage = item;
+                state.editingTaskId = null;
+                renderTasks();
+              }
+            });
+            bar.appendChild(pBtn);
+          }
+        });
+
+        var nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'page-btn';
+        nextBtn.textContent = 'Next >';
+        nextBtn.disabled = state.currentPage >= totalPages;
+        nextBtn.addEventListener('click', function () {
+          if (state.currentPage < totalPages) {
+            state.currentPage++;
+            state.editingTaskId = null;
+            renderTasks();
+          }
+        });
+        bar.appendChild(nextBtn);
+
+        var meta = document.createElement('span');
+        meta.className = 'page-meta';
+        meta.textContent = 'Page ' + state.currentPage + ' of ' + totalPages;
+        bar.appendChild(meta);
+      }
+
+      function renderTasks() {
+        var listEl = document.getElementById('taskList');
+        var emptyEl = document.getElementById('emptyState');
+        var summaryEl = document.getElementById('taskSummary');
+
+        var total = state.tasks.length;
+        var openCount = state.tasks.filter(function (t) { return !parseTodoLine(t.raw).completed; }).length;
+        var items = getFilteredAndSortedTasks();
+
+        var pageSize = Math.max(1, state.pageSize || 10);
+        var totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+        if (state.currentPage > totalPages) state.currentPage = totalPages;
+        if (state.currentPage < 1) state.currentPage = 1;
+
+        var startIdx = (state.currentPage - 1) * pageSize;
+        var pageItems = items.slice(startIdx, startIdx + pageSize);
+
+        summaryEl.textContent = items.length + ' shown · ' + openCount + ' open · ' + total + ' total';
+        listEl.innerHTML = '';
+
+        if (items.length === 0) {
+          emptyEl.style.display = 'block';
+          var isConnected = Boolean(state.fileHandle || state.manualMode);
+          var emptyReconnectBtn = document.getElementById('emptyReconnectBtn');
+          var emptyOpenFileBtn = document.getElementById('emptyOpenFileBtn');
+          var emptyNewFileBtn = document.getElementById('emptyNewFileBtn');
+          var resetFilterBtn = document.getElementById('resetFilterBtn');
+
+          if (!isConnected) {
+            document.getElementById('emptyMessage').textContent = state.pendingHandle
+              ? 'Reconnect your previous file (' + state.pendingHandle.name + ') or open a local todo.txt file.'
+              : 'Open an existing local todo.txt file or create a new one. Tasks sync directly with disk instead of browser cache.';
+            if (state.pendingHandle) {
+              emptyReconnectBtn.style.display = 'inline-flex';
+              emptyReconnectBtn.textContent = 'Reconnect ' + state.pendingHandle.name;
+            } else {
+              emptyReconnectBtn.style.display = 'none';
+            }
+            emptyOpenFileBtn.style.display = 'inline-flex';
+            emptyNewFileBtn.style.display = 'inline-flex';
+            resetFilterBtn.style.display = 'none';
+          } else {
+            document.getElementById('emptyMessage').textContent = total === 0
+              ? 'This todo.txt file is empty. Add your first task below.'
+              : 'No tasks match this filter or search.';
+            emptyReconnectBtn.style.display = 'none';
+            emptyOpenFileBtn.style.display = 'none';
+            emptyNewFileBtn.style.display = 'none';
+            resetFilterBtn.style.display = total === 0 ? 'none' : 'inline-flex';
+          }
+          renderPagination(0, 1);
+          return;
+        }
+
+        emptyEl.style.display = 'none';
+
+        pageItems.forEach(function (entry) {
+          var task = entry.task;
+          var parsed = entry.parsed;
+          var isEditing = state.editingTaskId === task.id;
+
+          var li = document.createElement('li');
+          li.className = 'task-row' + (parsed.completed ? ' completed' : '') + (isEditing ? ' editing' : '');
+
+          var checkBtn = document.createElement('button');
+          checkBtn.type = 'button';
+          checkBtn.className = 'task-check-btn';
+          checkBtn.setAttribute('aria-label', parsed.completed ? 'Mark incomplete' : 'Mark complete');
+          checkBtn.innerHTML = parsed.completed ? '&#10003;' : '';
+
+          var priColor = getCheckboxStyleForTask(parsed);
+          if (priColor) {
+            if (parsed.completed) {
+              checkBtn.style.backgroundColor = priColor;
+              checkBtn.style.borderColor = priColor;
+            } else {
+              checkBtn.style.borderColor = priColor;
+            }
+          }
+
+          checkBtn.addEventListener('click', function () {
+            task.raw = toggleRawCompletion(task.raw);
+            persistTasks();
+            render();
+          });
+
+          li.appendChild(checkBtn);
+
+          if (isEditing) {
+            var editWrap = document.createElement('div');
+            editWrap.className = 'task-edit-wrap';
+
+            var editInput = document.createElement('input');
+            editInput.type = 'text';
+            editInput.className = 'task-edit-input';
+            editInput.value = task.raw;
+            editInput.setAttribute('aria-label', 'Edit raw todo.txt line');
+
+            var quickRow = document.createElement('div');
+            quickRow.className = 'priority-quick-row';
+
+            var quickLabel = document.createElement('span');
+            quickLabel.className = 'priority-quick-label';
+            quickLabel.textContent = 'Priority:';
+            quickRow.appendChild(quickLabel);
+
+            var priButtons = {};
+
+            function syncPriorityQuickButtons() {
+              var currentParsed = parseTodoLine(editInput.value);
+              PRIORITIES.forEach(function (letter) {
+                var btn = priButtons[letter];
+                var isActive = currentParsed.priority === letter;
+                var c = state.priorityColors[letter] || DEFAULT_PRIORITY_COLORS[letter] || '#3b82f6';
+                btn.classList.toggle('active', isActive);
+                if (isActive) {
+                  btn.style.backgroundColor = c;
+                  btn.style.borderColor = c;
+                  btn.style.color = '#0b0d10';
+                } else {
+                  btn.style.backgroundColor = '';
+                  btn.style.borderColor = c;
+                  btn.style.color = c;
+                }
+              });
+            }
+
+            PRIORITIES.forEach(function (letter) {
+              var pBtn = document.createElement('button');
+              pBtn.type = 'button';
+              pBtn.className = 'priority-quick-btn';
+              pBtn.textContent = '(' + letter + ')';
+              pBtn.title = 'Set or toggle priority (' + letter + ')';
+              pBtn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+              });
+              pBtn.addEventListener('click', function () {
+                editInput.value = applyPriorityPrefix(editInput.value, letter);
+                syncPriorityQuickButtons();
+                editInput.focus();
+              });
+              priButtons[letter] = pBtn;
+              quickRow.appendChild(pBtn);
+            });
+
+            var clearPriBtn = document.createElement('button');
+            clearPriBtn.type = 'button';
+            clearPriBtn.className = 'priority-quick-btn';
+            clearPriBtn.textContent = 'None';
+            clearPriBtn.title = 'Remove priority';
+            clearPriBtn.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+            });
+            clearPriBtn.addEventListener('click', function () {
+              editInput.value = applyPriorityPrefix(editInput.value, null);
+              syncPriorityQuickButtons();
+              editInput.focus();
+            });
+            quickRow.appendChild(clearPriBtn);
+
+            var editActions = document.createElement('div');
+            editActions.className = 'task-edit-actions';
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'task-edit-action-btn';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+            });
+            cancelBtn.addEventListener('click', function () {
+              committed = true;
+              state.editingTaskId = null;
+              render();
+            });
+
+            var saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'task-edit-action-btn save';
+            saveBtn.textContent = 'Save';
+            saveBtn.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+            });
+            saveBtn.addEventListener('click', function () {
+              commitEdit();
+            });
+
+            editActions.appendChild(cancelBtn);
+            editActions.appendChild(saveBtn);
+            quickRow.appendChild(editActions);
+
+            var committed = false;
+            function commitEdit() {
+              if (committed) return;
+              committed = true;
+              var val = editInput.value.trim();
+              if (val && val !== task.raw) {
+                task.raw = val;
+                persistTasks();
+              }
+              state.editingTaskId = null;
+              render();
+            }
+
+            editInput.addEventListener('input', syncPriorityQuickButtons);
+
+            editInput.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commitEdit();
+              } else if (e.key === 'Escape') {
+                committed = true;
+                state.editingTaskId = null;
+                render();
+              }
+            });
+
+            editInput.addEventListener('blur', function () {
+              setTimeout(function () {
+                if (!editWrap.contains(document.activeElement)) {
+                  commitEdit();
+                }
+              }, 0);
+            });
+
+            editWrap.appendChild(editInput);
+            editWrap.appendChild(quickRow);
+            li.appendChild(editWrap);
+
+            syncPriorityQuickButtons();
+
+            setTimeout(function () {
+              editInput.focus();
+              editInput.setSelectionRange(editInput.value.length, editInput.value.length);
+            }, 0);
+          } else {
+            var mainWrap = document.createElement('div');
+            mainWrap.className = 'task-main';
+            mainWrap.title = 'Click to edit task';
+            mainWrap.addEventListener('click', function () {
+              state.editingTaskId = task.id;
+              renderTasks();
+            });
+
+            if (parsed.content) {
+              var contentBtn = document.createElement('button');
+              contentBtn.type = 'button';
+              var isBoldA = state.boldPriorityA && parsed.priority === 'A';
+              contentBtn.className = 'task-content' + (isBoldA ? ' priority-a' : '');
+              contentBtn.textContent = parsed.content;
+              var textColor = getTextColorForTask(parsed);
+              if (textColor) {
+                contentBtn.style.color = textColor;
+              }
+              contentBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                state.editingTaskId = task.id;
+                renderTasks();
+              });
+              mainWrap.appendChild(contentBtn);
+            }
+
+            parsed.projects.forEach(function (proj) {
+              var tag = '+' + proj;
+              var isTagActive = Boolean(state.selectedTag && state.selectedTag.toLowerCase() === tag.toLowerCase());
+              var pill = document.createElement('button');
+              pill.type = 'button';
+              pill.className = 'tag-pill tag-project' + (isTagActive ? ' active' : '');
+              pill.textContent = tag;
+              pill.setAttribute('aria-pressed', isTagActive ? 'true' : 'false');
+              pill.title = isTagActive ? 'Clear ' + tag + ' filter' : 'Filter by ' + tag;
+              pill.addEventListener('click', function (e) {
+                e.stopPropagation();
+                handleTagClick(tag);
+              });
+              mainWrap.appendChild(pill);
+            });
+
+            parsed.contexts.forEach(function (ctx) {
+              var tag = '@' + ctx;
+              var isTagActive = Boolean(state.selectedTag && state.selectedTag.toLowerCase() === tag.toLowerCase());
+              var pill = document.createElement('button');
+              pill.type = 'button';
+              pill.className = 'tag-pill tag-context' + (isTagActive ? ' active' : '');
+              pill.textContent = tag;
+              pill.setAttribute('aria-pressed', isTagActive ? 'true' : 'false');
+              pill.title = isTagActive ? 'Clear ' + tag + ' filter' : 'Filter by ' + tag;
+              pill.addEventListener('click', function (e) {
+                e.stopPropagation();
+                handleTagClick(tag);
+              });
+              mainWrap.appendChild(pill);
+            });
+
+            li.appendChild(mainWrap);
+          }
+
+          var removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'task-remove-btn';
+          removeBtn.setAttribute('aria-label', 'Remove task');
+          removeBtn.innerHTML = '&times;';
+          removeBtn.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+          });
+          removeBtn.addEventListener('click', function () {
+            removeTaskSingleTap(task.id);
+          });
+
+          li.appendChild(removeBtn);
+          listEl.appendChild(li);
+        });
+
+        renderPagination(items.length, totalPages);
+      }
+
+      function removeTaskSingleTap(taskId) {
+        var idx = state.tasks.findIndex(function (t) { return t.id === taskId; });
+        if (idx === -1) return;
+        state.undoSnapshot = state.tasks.slice();
+        state.tasks.splice(idx, 1);
+        if (state.editingTaskId === taskId) state.editingTaskId = null;
+        persistTasks();
+        render();
+        showToast('Task removed', true);
+      }
+
+      function showToast(msg, allowUndo) {
+        var toast = document.getElementById('toast');
+        var toastMsg = document.getElementById('toastMessage');
+        var undoBtn = document.getElementById('toastUndoBtn');
+
+        toastMsg.textContent = msg;
+        undoBtn.style.display = allowUndo ? 'inline' : 'none';
+        toast.classList.add('visible');
+
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove('visible');
+          state.undoSnapshot = null;
+        }, 4000);
+      }
+
+      function renderAnalyticsModal() {
+        var parsedList = state.tasks.map(function (t) { return parseTodoLine(t.raw); });
+        var total = parsedList.length;
+        var doneCount = parsedList.filter(function (p) { return p.completed; }).length;
+        var openCount = total - doneCount;
+        var rate = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+        var strip = document.getElementById('analyticsSummaryStrip');
+        strip.innerHTML =
+          '<div class="stat-box"><div class="stat-label">Total Tasks</div><div class="stat-value">' + total + '</div></div>' +
+          '<div class="stat-box"><div class="stat-label">Open</div><div class="stat-value">' + openCount + '</div></div>' +
+          '<div class="stat-box"><div class="stat-label">Completed</div><div class="stat-value">' + doneCount + '</div></div>' +
+          '<div class="stat-box"><div class="stat-label">Completion Rate</div><div class="stat-value">' + rate + '%</div></div>';
+
+        // Completion Trends by Date
+        var dateMap = {};
+        parsedList.forEach(function (p) {
+          if (p.creationDate) {
+            if (!dateMap[p.creationDate]) dateMap[p.creationDate] = { created: 0, completed: 0 };
+            dateMap[p.creationDate].created++;
+          }
+          if (p.completed && p.completionDate) {
+            if (!dateMap[p.completionDate]) dateMap[p.completionDate] = { created: 0, completed: 0 };
+            dateMap[p.completionDate].completed++;
+          }
+        });
+
+        var dates = Object.keys(dateMap).sort();
+        var trendEl = document.getElementById('trendChartContainer');
+        if (dates.length === 0) {
+          trendEl.innerHTML = '<div class="modal-help">Add YYYY-MM-DD creation or completion dates to tasks to visualize trends over time.</div>';
+        } else {
+          var w = 680;
+          var h = 170;
+          var padL = 28;
+          var padR = 14;
+          var padT = 12;
+          var padB = 26;
+          var plotW = w - padL - padR;
+          var plotH = h - padT - padB;
+          var maxVal = 1;
+          dates.forEach(function (d) {
+            maxVal = Math.max(maxVal, dateMap[d].created, dateMap[d].completed);
+          });
+
+          var groupW = plotW / dates.length;
+          var barW = Math.max(4, Math.min(18, groupW * 0.34));
+          var svgParts = ['<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="170" style="display:block;">'];
+
+          for (var g = 0; g <= 2; g++) {
+            var gy = padT + (plotH * g) / 2;
+            var gLabel = Math.round(maxVal * (1 - g / 2));
+            svgParts.push('<line x1="' + padL + '" y1="' + gy + '" x2="' + (w - padR) + '" y2="' + gy + '" stroke="var(--border-subtle)" stroke-dasharray="3 3"/>');
+            svgParts.push('<text x="' + (padL - 5) + '" y="' + (gy + 3) + '" text-anchor="end" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">' + gLabel + '</text>');
+          }
+
+          dates.forEach(function (d, idx) {
+            var cx = padL + idx * groupW + groupW / 2;
+            var createdH = (dateMap[d].created / maxVal) * plotH;
+            var completedH = (dateMap[d].completed / maxVal) * plotH;
+
+            svgParts.push('<rect x="' + (cx - barW - 1) + '" y="' + (padT + plotH - createdH) + '" width="' + barW + '" height="' + createdH + '" rx="2" fill="var(--accent)"><title>' + d + ' Created: ' + dateMap[d].created + '</title></rect>');
+            svgParts.push('<rect x="' + (cx + 1) + '" y="' + (padT + plotH - completedH) + '" width="' + barW + '" height="' + completedH + '" rx="2" fill="var(--success)"><title>' + d + ' Completed: ' + dateMap[d].completed + '</title></rect>');
+
+            if (dates.length <= 10 || idx % Math.ceil(dates.length / 8) === 0 || idx === dates.length - 1) {
+              svgParts.push('<text x="' + cx + '" y="' + (h - 6) + '" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">' + d.slice(5) + '</text>');
+            }
+          });
+
+          svgParts.push('</svg>');
+          trendEl.innerHTML = svgParts.join('');
+        }
+
+        // Project Distribution
+        var projMap = {};
+        parsedList.forEach(function (p) {
+          var keys = p.projects.length > 0 ? p.projects : ['No Project'];
+          keys.forEach(function (proj) {
+            if (!projMap[proj]) projMap[proj] = { open: 0, done: 0 };
+            if (p.completed) projMap[proj].done++;
+            else projMap[proj].open++;
+          });
+        });
+
+        var projList = Object.keys(projMap)
+          .map(function (name) {
+            return {
+              name: name,
+              open: projMap[name].open,
+              done: projMap[name].done,
+              total: projMap[name].open + projMap[name].done
+            };
+          })
+          .sort(function (a, b) { return b.total - a.total; })
+          .slice(0, 10);
+
+        var projEl = document.getElementById('projectChartContainer');
+        if (projList.length === 0) {
+          projEl.innerHTML = '<div class="modal-help">No tasks available to group by project.</div>';
+        } else {
+          var maxProj = Math.max.apply(null, projList.map(function (p) { return p.total; })) || 1;
+          var rowsHtml = projList.map(function (p) {
+            var openPct = (p.open / maxProj) * 100;
+            var donePct = (p.done / maxProj) * 100;
+            var label = p.name === 'No Project' ? '(No Project)' : '+' + p.name;
+            return (
+              '<div style="display:grid; grid-template-columns:110px 1fr 48px; align-items:center; gap:8px; margin-bottom:6px; font-size:10px;">' +
+                '<span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + label + '</span>' +
+                '<div style="height:10px; background:var(--bg-surface); border-radius:3px; overflow:hidden; display:flex;">' +
+                  '<div style="width:' + openPct + '%; background:var(--accent);" title="Open: ' + p.open + '"></div>' +
+                  '<div style="width:' + donePct + '%; background:var(--success);" title="Done: ' + p.done + '"></div>' +
+                '</div>' +
+                '<span style="text-align:right; color:var(--text-muted); font-variant-numeric:tabular-nums;">' + p.open + '/' + p.total + '</span>' +
+              '</div>'
+            );
+          }).join('');
+          projEl.innerHTML = rowsHtml;
+        }
+      }
+
+      function renderThemeGrid() {
+        var grid = document.getElementById('themeGrid');
+        grid.innerHTML = '';
+
+        Object.keys(THEMES).forEach(function (key) {
+          var t = THEMES[key];
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'theme-option-btn' + (state.theme === key ? ' active' : '');
+
+          var pair = document.createElement('span');
+          pair.className = 'theme-swatch-pair';
+
+          var swBg = document.createElement('span');
+          swBg.className = 'theme-swatch-bg';
+          swBg.style.backgroundColor = t.bgSurface;
+
+          var swAcc = document.createElement('span');
+          swAcc.className = 'theme-swatch-accent';
+          swAcc.style.backgroundColor = t.accent;
+
+          pair.appendChild(swBg);
+          pair.appendChild(swAcc);
+
+          var label = document.createElement('span');
+          label.textContent = t.label;
+
+          btn.appendChild(pair);
+          btn.appendChild(label);
+
+          btn.addEventListener('click', function () {
+            state.theme = key;
+            applyTheme(key);
+            saveState();
+            renderThemeGrid();
+          });
+
+          grid.appendChild(btn);
+        });
+      }
+
+      function renderColorGrid(containerId, colorMap, defaultsMap, onChange) {
+        var grid = document.getElementById(containerId);
+        grid.innerHTML = '';
+
+        PRIORITIES.forEach(function (letter) {
+          var val = colorMap[letter] || defaultsMap[letter];
+
+          var item = document.createElement('div');
+          item.className = 'priority-color-item';
+
+          var label = document.createElement('span');
+          label.innerHTML = 'Priority <strong>(' + letter + ')</strong>';
+
+          var wrap = document.createElement('div');
+          wrap.className = 'color-picker-wrap';
+
+          var hex = document.createElement('span');
+          hex.className = 'color-hex-text';
+          hex.textContent = val;
+
+          var input = document.createElement('input');
+          input.type = 'color';
+          input.className = 'color-swatch-input';
+          input.value = val;
+          input.setAttribute('aria-label', 'Priority ' + letter + ' color');
+          input.addEventListener('input', function (e) {
+            var nextVal = e.target.value;
+            colorMap[letter] = nextVal;
+            hex.textContent = nextVal;
+            onChange();
+          });
+
+          wrap.appendChild(hex);
+          wrap.appendChild(input);
+          item.appendChild(label);
+          item.appendChild(wrap);
+          grid.appendChild(item);
+        });
+      }
+
+      function syncSettingsModalFields() {
+        renderThemeGrid();
+        document.getElementById('pageSizeInput').value = String(state.pageSize);
+        document.getElementById('colorizeCheckboxesInput').checked = state.colorizeCheckboxes;
+        document.getElementById('boldPriorityAInput').checked = state.boldPriorityA;
+        document.getElementById('colorizeTextInput').checked = state.colorizeText;
+
+        renderColorGrid('checkboxColorGrid', state.priorityColors, DEFAULT_PRIORITY_COLORS, function () {
+          saveState();
+          renderTasks();
+        });
+        renderColorGrid('textColorGrid', state.priorityTextColors, DEFAULT_TEXT_COLORS, function () {
+          saveState();
+          renderTasks();
+        });
+      }
+
+      function renderCustomFilterModalList() {
+        var container = document.getElementById('customFilterList');
+        container.innerHTML = '';
+
+        state.filters.forEach(function (f, index) {
+          var row = document.createElement('div');
+          row.className = 'custom-filter-item';
+
+          var meta = document.createElement('div');
+          meta.className = 'custom-filter-meta';
+
+          var name = document.createElement('div');
+          name.className = 'custom-filter-name';
+          name.textContent = f.label + (f.visible === false ? ' (Hidden)' : '');
+
+          var query = document.createElement('div');
+          query.className = 'custom-filter-query';
+          query.textContent = f.query || '(shows all tasks)';
+
+          meta.appendChild(name);
+          meta.appendChild(query);
+
+          var actions = document.createElement('div');
+          actions.className = 'custom-filter-actions';
+
+          var upBtn = document.createElement('button');
+          upBtn.type = 'button';
+          upBtn.className = 'btn btn-sm btn-icon';
+          upBtn.textContent = '↑';
+          upBtn.title = 'Move up';
+          upBtn.disabled = index === 0;
+          upBtn.addEventListener('click', function () {
+            if (index > 0) {
+              var tmp = state.filters[index - 1];
+              state.filters[index - 1] = state.filters[index];
+              state.filters[index] = tmp;
+              saveState();
+              render();
+              renderCustomFilterModalList();
+            }
+          });
+
+          var visBtn = document.createElement('button');
+          visBtn.type = 'button';
+          visBtn.className = 'btn btn-sm';
+          visBtn.textContent = f.visible === false ? 'Show' : 'Hide';
+          visBtn.addEventListener('click', function () {
+            f.visible = f.visible === false;
+            saveState();
+            render();
+            renderCustomFilterModalList();
+          });
+
+          var editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'btn btn-sm';
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', function () {
+            state.editingFilterId = f.id;
+            document.getElementById('filterLabelInput').value = f.label;
+            document.getElementById('filterQueryInput').value = f.query;
+            document.getElementById('filterColorSelect').value = f.color || 'blue';
+            document.getElementById('filterFormHeading').textContent = 'Edit Filter Button';
+            document.getElementById('saveFilterBtn').textContent = 'Update Button';
+            document.getElementById('cancelFilterEditBtn').style.display = 'inline-flex';
+          });
+
+          var delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn btn-sm btn-danger';
+          delBtn.textContent = 'Delete';
+          delBtn.disabled = state.filters.length <= 1;
+          delBtn.addEventListener('click', function () {
+            state.filters = state.filters.filter(function (item) { return item.id !== f.id; });
+            if (state.activeFilterId === f.id && state.filters.length > 0) {
+              state.activeFilterId = state.filters[0].id;
+            }
+            saveState();
+            render();
+            renderCustomFilterModalList();
+          });
+
+          actions.appendChild(upBtn);
+          actions.appendChild(visBtn);
+          actions.appendChild(editBtn);
+          actions.appendChild(delBtn);
+
+          row.appendChild(meta);
+          row.appendChild(actions);
+          container.appendChild(row);
+        });
+      }
+
+      function resetFilterForm() {
+        state.editingFilterId = null;
+        document.getElementById('filterLabelInput').value = '';
+        document.getElementById('filterQueryInput').value = '';
+        document.getElementById('filterColorSelect').value = 'blue';
+        document.getElementById('filterFormHeading').textContent = 'Add Custom Filter Button';
+        document.getElementById('saveFilterBtn').textContent = 'Add Button';
+        document.getElementById('cancelFilterEditBtn').style.display = 'none';
+      }
+
+      function downloadFile(filename, content, mimeType) {
+        var blob = new Blob([content], { type: mimeType });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function importLines(lines, mode) {
+        var clean = lines
+          .map(function (l) { return String(l).trim(); })
+          .filter(function (l) { return l.length > 0; });
+
+        if (clean.length === 0) {
+          showToast('No valid task lines found.');
+          return;
+        }
+
+        if (mode === 'replace') {
+          state.tasks = clean.map(function (raw) { return { id: uid(), raw: raw }; });
+        } else {
+          var existingSet = {};
+          state.tasks.forEach(function (t) { existingSet[t.raw] = true; });
+          clean.forEach(function (raw) {
+            if (!existingSet[raw]) {
+              state.tasks.push({ id: uid(), raw: raw });
+              existingSet[raw] = true;
+            }
+          });
+        }
+
+        state.currentPage = 1;
+        persistTasks();
+        render();
+        showToast('Imported ' + clean.length + ' task(s).');
+      }
+
+      function handleBackupPayloadImport(text, mode, restoreSettings) {
+        var trimmed = String(text || '').trim();
+        if (!trimmed) return false;
+
+        if (trimmed.charAt(0) === '{') {
+          try {
+            var obj = JSON.parse(trimmed);
+            var restoredSettings = false;
+            if (restoreSettings && (obj.filters || obj.settings || obj.theme || obj.pageSize || obj.priorityColors || obj.priorityTextColors)) {
+              applyImportedConfig(obj);
+              restoredSettings = true;
+            }
+            if (Array.isArray(obj.tasks) && obj.tasks.length > 0) {
+              var lines = obj.tasks.map(function (t) { return typeof t === 'string' ? t : t.raw; });
+              importLines(lines, mode);
+              if (restoredSettings) {
+                showToast('Restored tasks, custom views, and settings');
+              }
+              return true;
+            }
+            if (restoredSettings) {
+              saveState();
+              render();
+              showToast('Restored settings and custom filter views');
+              return true;
+            }
+          } catch (err) {
+            // fallback to plain todo.txt lines
+          }
+        }
+
+        importLines(trimmed.split(/\r?\n/), mode);
+        return true;
+      }
+
+      function updateBackupSummary() {
+        var bar = document.getElementById('backupSummaryBar');
+        if (!bar) return;
+        bar.textContent = 'Ready to back up: ' + state.tasks.length + ' tasks · ' + state.filters.length + ' filter views · theme (' + (THEMES[state.theme] ? THEMES[state.theme].label : state.theme) + '), pagination & colors';
+      }
+
+      function renderActiveTagChip() {
+        var chip = document.getElementById('activeTagChip');
+        if (!chip) return;
+        if (!state.selectedTag) {
+          chip.style.display = 'none';
+          chip.innerHTML = '';
+          return;
+        }
+        var isProj = state.selectedTag.charAt(0) === '+';
+        chip.className = 'active-tag-chip ' + (isProj ? 'project' : 'context');
+        chip.title = 'Clear ' + state.selectedTag + ' filter';
+        chip.innerHTML = '';
+        var lbl = document.createElement('span');
+        lbl.textContent = state.selectedTag;
+        var closeSpan = document.createElement('span');
+        closeSpan.innerHTML = '&times;';
+        chip.appendChild(lbl);
+        chip.appendChild(closeSpan);
+        chip.style.display = 'inline-flex';
+      }
+
+      function handleTagClick(tag) {
+        if (state.selectedTag && state.selectedTag.toLowerCase() === tag.toLowerCase()) {
+          state.selectedTag = null;
+        } else {
+          state.selectedTag = tag;
+        }
+        state.currentPage = 1;
+        state.editingTaskId = null;
+        renderActiveTagChip();
+        renderTasks();
+      }
+
+      function render() {
+        document.getElementById('sortSelect').value = state.sortBy;
+        updateFileBar();
+        renderActiveTagChip();
+        renderFilterButtons();
+        renderTasks();
+      }
+
+      function bindEvents() {
+        document.getElementById('openLocalFileBtn').addEventListener('click', openLocalFileFlow);
+        document.getElementById('newLocalFileBtn').addEventListener('click', createNewLocalFileFlow);
+        document.getElementById('reconnectFileBtn').addEventListener('click', reconnectPendingFile);
+        document.getElementById('syncNowBtn').addEventListener('click', function () {
+          syncFromLocalFile(true);
+        });
+        document.getElementById('disconnectFileBtn').addEventListener('click', disconnectLocalFile);
+        document.getElementById('manualSaveFileBtn').addEventListener('click', function () {
+          var content = serializeTasksToText(state.tasks);
+          downloadFile(state.manualFileName || 'todo.txt', content, 'text/plain;charset=utf-8');
+          state.hasUnsavedManualChanges = false;
+          updateFileBar();
+          showToast('Saved ' + (state.manualFileName || 'todo.txt'));
+        });
+
+        document.getElementById('emptyOpenFileBtn').addEventListener('click', openLocalFileFlow);
+        document.getElementById('emptyNewFileBtn').addEventListener('click', createNewLocalFileFlow);
+        document.getElementById('emptyReconnectBtn').addEventListener('click', reconnectPendingFile);
+
+        document.getElementById('fallbackLocalFileInput').addEventListener('change', function (e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            var text = String(ev.target.result || '');
+            state.fileHandle = null;
+            state.pendingHandle = null;
+            state.manualMode = true;
+            state.manualFileName = file.name || 'todo.txt';
+            state.hasUnsavedManualChanges = false;
+            state.tasks = parseTextToTasks(text);
+            state.currentPage = 1;
+            render();
+            showToast('Loaded ' + state.manualFileName + ' (use Save todo.txt to write changes back)');
+          };
+          reader.readAsText(file);
+          e.target.value = '';
+        });
+
+        document.getElementById('addForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var input = document.getElementById('addInput');
+          var raw = input.value.trim();
+          if (!raw) return;
+          if (!state.fileHandle && !state.manualMode) {
+            showToast('Open or create a local todo.txt file first');
+            return;
+          }
+          state.tasks.unshift({ id: uid(), raw: raw });
+          state.currentPage = 1;
+          input.value = '';
+          persistTasks();
+          render();
+        });
+
+        var searchInput = document.getElementById('searchInput');
+        var clearSearchBtn = document.getElementById('clearSearchBtn');
+
+        searchInput.addEventListener('input', function () {
+          state.searchQuery = searchInput.value;
+          state.currentPage = 1;
+          clearSearchBtn.classList.toggle('visible', state.searchQuery.length > 0);
+          renderTasks();
+        });
+
+        clearSearchBtn.addEventListener('click', function () {
+          state.searchQuery = '';
+          state.currentPage = 1;
+          searchInput.value = '';
+          clearSearchBtn.classList.remove('visible');
+          renderTasks();
+          searchInput.focus();
+        });
+
+        document.getElementById('activeTagChip').addEventListener('click', function () {
+          state.selectedTag = null;
+          state.currentPage = 1;
+          renderActiveTagChip();
+          renderTasks();
+        });
+
+        document.getElementById('sortSelect').addEventListener('change', function (e) {
+          state.sortBy = e.target.value;
+          state.currentPage = 1;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('resetFilterBtn').addEventListener('click', function () {
+          state.searchQuery = '';
+          state.selectedTag = null;
+          state.currentPage = 1;
+          searchInput.value = '';
+          clearSearchBtn.classList.remove('visible');
+          if (state.filters.length > 0) {
+            state.filters[0].visible = true;
+            state.activeFilterId = state.filters[0].id;
+          }
+          saveState();
+          render();
+        });
+
+        document.getElementById('toastUndoBtn').addEventListener('click', function () {
+          if (state.undoSnapshot) {
+            state.tasks = state.undoSnapshot;
+            state.undoSnapshot = null;
+            persistTasks();
+            render();
+            document.getElementById('toast').classList.remove('visible');
+          }
+        });
+
+        // Analytics Modal
+        var analyticsModal = document.getElementById('analyticsModal');
+        document.getElementById('openAnalyticsBtn').addEventListener('click', function () {
+          renderAnalyticsModal();
+          analyticsModal.classList.add('open');
+        });
+        document.getElementById('closeAnalyticsBtn').addEventListener('click', function () {
+          analyticsModal.classList.remove('open');
+        });
+        analyticsModal.addEventListener('click', function (e) {
+          if (e.target === analyticsModal) analyticsModal.classList.remove('open');
+        });
+
+        // Settings Modal
+        var settingsModal = document.getElementById('settingsModal');
+        document.getElementById('openSettingsBtn').addEventListener('click', function () {
+          syncSettingsModalFields();
+          settingsModal.classList.add('open');
+        });
+        document.getElementById('closeSettingsBtn').addEventListener('click', function () {
+          settingsModal.classList.remove('open');
+        });
+        settingsModal.addEventListener('click', function (e) {
+          if (e.target === settingsModal) settingsModal.classList.remove('open');
+        });
+
+        document.getElementById('pageSizeInput').addEventListener('input', function (e) {
+          var n = parseInt(e.target.value, 10);
+          if (!isNaN(n) && n >= 1) {
+            state.pageSize = Math.min(500, n);
+            state.currentPage = 1;
+            saveState();
+            renderTasks();
+          }
+        });
+
+        document.getElementById('pageSizeInput').addEventListener('blur', function (e) {
+          var n = parseInt(e.target.value, 10);
+          if (isNaN(n) || n < 1) {
+            state.pageSize = 10;
+            e.target.value = '10';
+            state.currentPage = 1;
+            saveState();
+            renderTasks();
+          }
+        });
+
+        document.getElementById('colorizeCheckboxesInput').addEventListener('change', function (e) {
+          state.colorizeCheckboxes = e.target.checked;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('boldPriorityAInput').addEventListener('change', function (e) {
+          state.boldPriorityA = e.target.checked;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('colorizeTextInput').addEventListener('change', function (e) {
+          state.colorizeText = e.target.checked;
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('resetDefaultCheckboxColorsBtn').addEventListener('click', function () {
+          state.priorityColors = Object.assign({}, DEFAULT_PRIORITY_COLORS);
+          state.colorizeCheckboxes = true;
+          syncSettingsModalFields();
+          saveState();
+          renderTasks();
+        });
+
+        document.getElementById('resetDefaultTextColorsBtn').addEventListener('click', function () {
+          state.priorityTextColors = Object.assign({}, DEFAULT_TEXT_COLORS);
+          state.colorizeText = true;
+          state.boldPriorityA = true;
+          syncSettingsModalFields();
+          saveState();
+          renderTasks();
+        });
+
+        // Filters Modal
+        var filtersModal = document.getElementById('filtersModal');
+        document.getElementById('openFiltersBtn').addEventListener('click', function () {
+          resetFilterForm();
+          renderCustomFilterModalList();
+          filtersModal.classList.add('open');
+        });
+        document.getElementById('closeFiltersBtn').addEventListener('click', function () {
+          filtersModal.classList.remove('open');
+        });
+        filtersModal.addEventListener('click', function (e) {
+          if (e.target === filtersModal) filtersModal.classList.remove('open');
+        });
+
+        document.getElementById('cancelFilterEditBtn').addEventListener('click', resetFilterForm);
+
+        document.getElementById('newFilterForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var label = document.getElementById('filterLabelInput').value.trim();
+          var query = document.getElementById('filterQueryInput').value.trim();
+          var color = document.getElementById('filterColorSelect').value;
+          if (!label) return;
+
+          if (state.editingFilterId) {
+            var target = state.filters.find(function (f) { return f.id === state.editingFilterId; });
+            if (target) {
+              target.label = label;
+              target.query = query;
+              target.color = color;
+            }
+          } else {
+            state.filters.push({
+              id: 'f_' + Date.now().toString(36),
+              label: label,
+              query: query,
+              color: color,
+              visible: true
+            });
+          }
+
+          resetFilterForm();
+          saveState();
+          render();
+          renderCustomFilterModalList();
+        });
+
+        document.getElementById('resetDefaultFiltersBtn').addEventListener('click', function () {
+          state.filters = DEFAULT_FILTERS.map(function (f) { return Object.assign({}, f); });
+          state.activeFilterId = 'f_all';
+          state.currentPage = 1;
+          resetFilterForm();
+          saveState();
+          render();
+          renderCustomFilterModalList();
+        });
+
+        // Backup Modal
+        var backupModal = document.getElementById('backupModal');
+        document.getElementById('openBackupBtn').addEventListener('click', function () {
+          updateBackupSummary();
+          backupModal.classList.add('open');
+        });
+        document.getElementById('closeBackupBtn').addEventListener('click', function () {
+          backupModal.classList.remove('open');
+        });
+        backupModal.addEventListener('click', function (e) {
+          if (e.target === backupModal) backupModal.classList.remove('open');
+        });
+
+        document.getElementById('exportTxtBtn').addEventListener('click', function () {
+          var content = state.tasks.map(function (t) { return t.raw; }).join('\n');
+          downloadFile('todo_' + todayISO() + '.txt', content, 'text/plain;charset=utf-8');
+          showToast('Exported todo.txt');
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', function () {
+          var payload = JSON.stringify({
+            version: 2,
+            exportedAt: new Date().toISOString(),
+            tasks: state.tasks,
+            filters: state.filters,
+            settings: buildSettingsSnapshot()
+          }, null, 2);
+          downloadFile('todotxt_full_backup_' + todayISO() + '.json', payload, 'application/json;charset=utf-8');
+          showToast('Exported full backup (tasks, views & settings)');
+        });
+
+        document.getElementById('exportSettingsJsonBtn').addEventListener('click', function () {
+          var payload = JSON.stringify({
+            version: 2,
+            type: 'settings_and_views',
+            exportedAt: new Date().toISOString(),
+            filters: state.filters,
+            settings: buildSettingsSnapshot()
+          }, null, 2);
+          downloadFile('todotxt_settings_views_' + todayISO() + '.json', payload, 'application/json;charset=utf-8');
+          showToast('Exported settings & custom views');
+        });
+
+        document.getElementById('copyRawBtn').addEventListener('click', function () {
+          var content = state.tasks.map(function (t) { return t.raw; }).join('\n');
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(content).then(function () {
+              showToast('Copied ' + state.tasks.length + ' lines to clipboard');
+            });
+          } else {
+            document.getElementById('pasteImportTextarea').value = content;
+            showToast('Lines placed in text area below');
+          }
+        });
+
+        document.getElementById('pickFileBtn').addEventListener('click', function () {
+          document.getElementById('importFileInput').click();
+        });
+
+        document.getElementById('importFileInput').addEventListener('change', function (e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            var text = String(ev.target.result || '');
+            var mode = document.getElementById('importModeSelect').value;
+            var restoreSettings = document.getElementById('restoreSettingsOnImport').checked;
+            handleBackupPayloadImport(text, mode, restoreSettings);
+            backupModal.classList.remove('open');
+          };
+          reader.readAsText(file);
+          e.target.value = '';
+        });
+
+        document.getElementById('applyPasteImportBtn').addEventListener('click', function () {
+          var textarea = document.getElementById('pasteImportTextarea');
+          var text = textarea.value.trim();
+          if (!text) return;
+          var mode = document.getElementById('importModeSelect').value;
+          var restoreSettings = document.getElementById('restoreSettingsOnImport').checked;
+          handleBackupPayloadImport(text, mode, restoreSettings);
+          textarea.value = '';
+          backupModal.classList.remove('open');
+        });
+
+        document.getElementById('clearCompletedBtn').addEventListener('click', function () {
+          var before = state.tasks.length;
+          state.undoSnapshot = state.tasks.slice();
+          state.tasks = state.tasks.filter(function (t) { return !parseTodoLine(t.raw).completed; });
+          var removed = before - state.tasks.length;
+          persistTasks();
+          render();
+          backupModal.classList.remove('open');
+          if (removed > 0) {
+            showToast('Purged ' + removed + ' completed task(s)', true);
+          } else {
+            showToast('No completed tasks to purge');
+          }
+        });
+
+        // Continuous two-way external file change sync (window focus + polling)
+        window.addEventListener('focus', function () {
+          if (state.fileHandle && !state.editingTaskId) {
+            syncFromLocalFile(false);
+          }
+        });
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden && state.fileHandle && !state.editingTaskId) {
+            syncFromLocalFile(false);
+          }
+        });
+        setInterval(function () {
+          if (!document.hidden && state.fileHandle && !state.editingTaskId) {
+            syncFromLocalFile(false);
+          }
+        }, 2000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+          var tag = (document.activeElement && document.activeElement.tagName) || '';
+          var isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+          if (e.key === 'Escape') {
+            var hadOverlayOrEdit =
+              analyticsModal.classList.contains('open') ||
+              filtersModal.classList.contains('open') ||
+              settingsModal.classList.contains('open') ||
+              backupModal.classList.contains('open') ||
+              Boolean(state.editingTaskId);
+            analyticsModal.classList.remove('open');
+            filtersModal.classList.remove('open');
+            settingsModal.classList.remove('open');
+            backupModal.classList.remove('open');
+            if (state.editingTaskId) {
+              state.editingTaskId = null;
+              renderTasks();
+            } else if (!hadOverlayOrEdit && state.selectedTag) {
+              state.selectedTag = null;
+              state.currentPage = 1;
+              renderActiveTagChip();
+              renderTasks();
+            }
+            return;
+          }
+
+          if (!isTyping && e.key === '/') {
+            e.preventDefault();
+            searchInput.focus();
+          } else if (!isTyping && e.key === 'n') {
+            e.preventDefault();
+            document.getElementById('addInput').focus();
+          }
+        });
+      }
+
+      bindEvents();
+      loadState().then(function () {
+        applyTheme(state.theme);
+      });
+    })();
+  </script>
+</body>
+</html>
